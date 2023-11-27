@@ -31,14 +31,30 @@ DIMS = [(1, 4),
 def test_fft1d_forward(m, n, device):
     _A = np.random.randn(m, n).astype(np.float32)
     A = ndl.Tensor(nd.array(_A), device=device)
-    np.testing.assert_allclose(np.fft.fft(_A), ndl.fft1d(A), atol=1e-5, rtol=1e-5)
+    np.testing.assert_allclose(np.fft.fft(_A), ndl.fft1d(A).numpy(), atol=1e-5, rtol=1e-5)
 
 @pytest.mark.parametrize("m,n", DIMS)
 @pytest.mark.parametrize("device", _DEVICES, ids=["cpu", "cuda"])
 def test_fft2d_forward(m, n, device):
     _A = np.random.randn(m, n).astype(np.float32)
     A = ndl.Tensor(nd.array(_A), device=device)
-    np.testing.assert_allclose(np.fft.fft2(_A), ndl.fft2d(A), atol=1e-5, rtol=1e-5)
+    np.testing.assert_allclose(np.fft.fft2(_A), ndl.fft2d(A).numpy(), atol=1e-5, rtol=1e-5)
+
+@pytest.mark.parametrize("m,n", DIMS)
+@pytest.mark.parametrize("device", _DEVICES, ids=["cpu", "cuda"])
+def test_ifft1d_forward(m, n, device):
+    _A = np.random.randn(m, n).astype(np.float32)
+    A = ndl.Tensor(nd.array(_A), device=device)
+    np.testing.assert_allclose(np.fft.ifft(np.fft.fft(_A)), ndl.ifft1d(ndl.fft1d(A)).numpy(), atol=1e-5, rtol=1e-5)
+    np.testing.assert_allclose(A.numpy(), ndl.ifft1d(ndl.fft1d(A)).numpy(), atol=1e-5, rtol=1e-5)
+
+@pytest.mark.parametrize("m,n", DIMS)
+@pytest.mark.parametrize("device", _DEVICES, ids=["cpu", "cuda"])
+def test_ifft1d_forward(m, n, device):
+    _A = np.random.randn(m, n).astype(np.float32)
+    A = ndl.Tensor(nd.array(_A), device=device)
+    np.testing.assert_allclose(np.fft.ifft2(np.fft.fft2(_A)), ndl.ifft2d(ndl.fft2d(A)).numpy(), atol=1e-5, rtol=1e-5)
+    np.testing.assert_allclose(A.numpy(), ndl.iff21d(ndl.fft2d(A)).numpy(), atol=1e-5, rtol=1e-5)
 
 
 def backward_check(f, *args, **kwargs):

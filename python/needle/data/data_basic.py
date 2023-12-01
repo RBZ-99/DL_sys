@@ -1,6 +1,7 @@
 import numpy as np
 from ..autograd import Tensor
 
+
 from typing import Iterator, Optional, List, Sized, Union, Iterable, Any
 
 
@@ -57,15 +58,33 @@ class DataLoader:
         if not self.shuffle:
             self.ordering = np.array_split(np.arange(len(dataset)), 
                                            range(batch_size, len(dataset), batch_size))
+        
+        self.curr = 0
 
     def __iter__(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.curr = 0
+
+        if self.shuffle:
+            inds = np.arange(len(self.dataset))
+            np.random.shuffle(inds)
+            self.ordering = np.array_split(inds, 
+                                           range(self.batch_size, len(self.dataset), self.batch_size))
+        
+        # raise NotImplementedError()
         ### END YOUR SOLUTION
         return self
 
     def __next__(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        if self.curr >= len(self.ordering):
+            raise StopIteration
+
+        batch = self.dataset[self.ordering[self.curr]]
+        batch_tensor = tuple([Tensor(output) for output in batch])
+        self.curr += 1
+
+        return batch_tensor
+        # raise NotImplementedError()
         ### END YOUR SOLUTION
 

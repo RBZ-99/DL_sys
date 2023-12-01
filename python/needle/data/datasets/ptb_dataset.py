@@ -25,7 +25,12 @@ class Dictionary(object):
         Returns the word's unique ID.
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        if word not in self.word2idx:
+            self.word2idx[word] = len(self.idx2word)
+            self.idx2word.append(word)
+
+        return self.word2idx[word]
+        # raise NotImplementedError()
         ### END YOUR SOLUTION
 
     def __len__(self):
@@ -33,7 +38,8 @@ class Dictionary(object):
         Returns the number of unique words in the dictionary.
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return len(self.idx2word)
+        # raise NotImplementedError()
         ### END YOUR SOLUTION
 
 
@@ -60,7 +66,25 @@ class Corpus(object):
         ids: List of ids
         """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        ids = []
+
+        with open(path, "r") as file:
+            if max_lines:
+                lines = [next(file) for _ in range(max_lines)]
+            else:
+                lines = [line for line in file]
+
+            for line in lines:
+                words = line.split()
+
+                for word in words:
+                    id = self.dictionary.add_word(word)
+                    ids.append(id)
+
+                ids.append(self.dictionary.add_word("<eos>"))
+
+        return ids
+        # raise NotImplementedError()
         ### END YOUR SOLUTION
 
 
@@ -81,7 +105,9 @@ def batchify(data, batch_size, device, dtype):
     Returns the data as a numpy array of shape (nbatch, batch_size).
     """
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    seq_len = len(data) // batch_size
+    return np.reshape(data[:seq_len * batch_size], (batch_size, seq_len)).T
+    # raise NotImplementedError()
     ### END YOUR SOLUTION
 
 
@@ -105,5 +131,16 @@ def get_batch(batches, i, bptt, device=None, dtype=None):
     target - Tensor of shape (bptt*bs,) with cached data as NDArray
     """
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    assert i < len(batches) - 1
+
+    data = batches[i : i + bptt]
+    target = batches[i + 1 : i + bptt + 1]
+    if (i + bptt + 1) > len(batches):
+        data = batches[i : -1]
+        target = batches[i + 1 :]
+
+    target = target.reshape((-1,))
+
+    return Tensor(data, device = device, dtype = dtype), Tensor(target, device = device, dtype = dtype)
+    # raise NotImplementedError()
     ### END YOUR SOLUTION

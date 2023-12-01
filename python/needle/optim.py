@@ -25,7 +25,19 @@ class SGD(Optimizer):
 
     def step(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        for ix, param in enumerate(self.params):
+            gt_1 = param.grad.data + self.weight_decay * param.data
+
+            ut = ndl.init.zeros(*gt_1.shape, device = gt_1.device, dtype = gt_1.dtype)
+            if ix in self.u:
+                ut = self.u[ix]
+
+            ut_1 = self.momentum * ut + (1 - self.momentum) * gt_1
+
+            param.data = param.data - self.lr * ut_1
+
+            self.u[ix] = ut_1
+        # raise NotImplementedError()
         ### END YOUR SOLUTION
 
     def clip_grad_norm(self, max_norm=0.25):
@@ -60,5 +72,28 @@ class Adam(Optimizer):
 
     def step(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.t += 1
+
+        for ix, param in enumerate(self.params):
+            gt_1 = param.grad.data + self.weight_decay * param.data
+
+            mt = ndl.init.zeros(*gt_1.shape, device = gt_1.device, dtype = gt_1.dtype)
+            if ix in self.m:
+                mt = self.m[ix]
+
+            vt = ndl.init.zeros(*gt_1.shape, device = gt_1.device, dtype = gt_1.dtype)
+            if ix in self.v:
+                vt = self.v[ix]
+
+            mt_1 = self.beta1 * mt + (1 - self.beta1) * gt_1
+            mt_1_corr = mt_1 / (1 - (self.beta1 ** self.t) + self.eps)
+            vt_1 = self.beta2 * vt + (1 - self.beta2) * (gt_1 ** 2)
+            vt_1_corr = vt_1 / (1 - (self.beta2 ** self.t) + self.eps)
+
+            param.data = param.data - self.lr * mt_1_corr / ((vt_1_corr ** 0.5) + self.eps)
+
+            self.m[ix] = mt_1
+            self.v[ix] = vt_1
+            
+        # raise NotImplementedError()
         ### END YOUR SOLUTION

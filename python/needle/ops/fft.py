@@ -11,15 +11,18 @@ from .ops_mathematic import *
 
 from ..backend_selection import array_api, BACKEND 
 from .ops_tuple import *
-
+import pdb
 PI = 3.142
 
 
 class FFT1D(TensorOp):
+
     def compute(self, x):
         N = x.shape[0]
+        import pdb
 
         if N == 1:
+            pdb.set_trace()
             return x
 
         else:
@@ -27,7 +30,7 @@ class FFT1D(TensorOp):
             X_odd = fft1d(x[1::2])
             factor = exp(-2j * PI * NDArray(range(N)) / N)
             X = stack((X_even + factor[:int(N / 2)] * X_odd, X_even + factor[int(N / 2):] * X_odd), 0)
-
+            pdb.set_trace()
             return X
     
     def gradient(self, out_grad, node):
@@ -61,7 +64,7 @@ def ifft1d(a):
     return IFFT1D()(a)
 
 
-class FFT2D(TensorOp)
+class FFT2D(TensorOp):
     def compute(self, x):
         x = NDArray([fft1d(row) for row in x], dtype=np.complex128)
         x = NDArray([fft1d(col) for col in transpose(x)], dtype=np.complex128)

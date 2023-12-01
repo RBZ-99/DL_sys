@@ -1,66 +1,92 @@
-import numpy as np
-from numpy.core import as_array
+"""FFT Operator implementations."""
 
-def FFT_forward(x):
-    N = len(x)
-    if N == 1:
+from numbers import Number
+from typing import Optional, List, Tuple, Union
+
+from ..autograd import NDArray
+from ..autograd import Op, Tensor, Value, TensorOp
+from ..autograd import TensorTuple, TensorTupleOp
+
+from .ops_mathematic import *
+
+from ..backend_selection import array_api, BACKEND 
+from .ops_tuple import *
+
+PI = 3.142
+
+
+class FFT1D(TensorOp):
+    def compute(self, x):
+        N = x.shape[0]
+
+        if N == 1:
+            return x
+
+        else:
+            X_even = fft1d(x[::2])
+            X_odd = fft1d(x[1::2])
+            factor = exp(-2j * PI * NDArray(range(N)) / N)
+            X = stack((X_even + factor[:int(N / 2)] * X_odd, X_even + factor[int(N / 2):] * X_odd), 0)
+
+            return X
+    
+    def gradient(self, out_grad, node):
+        pass
+
+
+def fft1d(a):
+    return FFT1D()(a)
+
+
+class IFFT1D(TensorOp):
+    def compute(self, x):
+        N = x.shape[0]
+
+        if N == 1:
+            return x
+
+        else:
+            X_even = ifft1d(x[::2])
+            X_odd = ifft1d(x[1::2])
+            factor = exp(2j * PI * NDArray(range(N)) / N)
+            x = stack((X_even + factor[:int(N / 2)] * X_odd, X_even - factor[int(N / 2):] * X_odd), 0)
+
+            return x / 2 
+
+    def gradient(self, out_grad, node):
+        pass
+
+
+def ifft1d(a):
+    return IFFT1D()(a)
+
+
+class FFT2D(TensorOp)
+    def compute(self, x):
+        x = NDArray([fft1d(row) for row in x], dtype=np.complex128)
+        x = NDArray([fft1d(col) for col in transpose(x)], dtype=np.complex128)
+        x = transpose(x)
+
         return x
-    else:
-        X_even = FFT_forward(x[::2])
-        X_odd = FFT_forward(x[1::2])
-        factor = np.exp(-2j*np.pi*np.arange(N)/ N)
-        
-        X = np.concatenate([X_even+factor[:int(N/2)]*X_odd,X_even+factor[int(N/2):]*X_odd])
-        return X
-    
 
-def IFFT_forward(X):
-    N = len(X)
-    if N == 1:
-        return X
-    else:
-        X_even = IFFT_forward(X[::2])
-        X_odd = IFFT_forward(X[1::2])
-        factor = np.exp(2j * np.pi * np.arange(N) / N)
-        x = np.concatenate([X_even + factor[:int(N/2)] * X_odd,X_even - factor[int(N/2):] * X_odd])
-        return x / 2 
+    def gradient(self, out_grad, node):
+        pass
 
 
-def FFT2D_forward(X):
-
-    x = as_array(X)
-
-    ans = []
-
-    x = np.array([FFT_forward(row) for row in x], dtype=np.complex128)
-    
-    x = np.array([FFT_forward(col) for col in x.T], dtype=np.complex128).T
-
-    return x
-
-def IFFT2D_forward(X):
-
-    x = as_array(X)
-
-    ans = []
-
-    x = np.array([IFFT_forward(row) for row in x], dtype=np.complex128)
-    
-    x = np.array([IFFT_forward(col) for col in x.T], dtype=np.complex128).T
-
-    return x
+def fft2d(a):
+    return FFT2D()(a)
 
 
+class IFFT2D(TensorOp):
+    def compute(self, a):
+        x = np.array([IFFT_forward(row) for row in x], dtype=np.complex128)
+        x = np.array([IFFT_forward(col) for col in x.T], dtype=np.complex128).T
+
+        return x
+
+    def gradient(self, out_grad, node):
+        pass
 
 
-
-def IFFT2D_backward(X):
-    return X
-
-
-
-x = np.array([1, 2, 3, 4])
-X = IFFT(x)
-
-print("Original Signal:", x)
-print("IFFT Result:", X)
+def ifft2d(a):
+    return IFFT2D()(a)

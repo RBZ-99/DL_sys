@@ -29,33 +29,7 @@ class Concat(TensorOp):
         self.lens = []
 
     def compute(self, args: TensorTuple) -> Tensor:
-        assert len(args) > 0, "Concat needs at least one array"
-        
-        shape = args[0].shape
-        ref_shape = list(shape)
-        del ref_shape[self.axis]
-        new_dim = 0
-
-        for arg in args:
-          arg_shape = list(arg.shape)
-          new_dim += arg_shape[self.axis]
-          del arg_shape[self.axis]
-          assert ref_shape == arg_shape, "All arrays need to be of same size in all the non-concatenating axes"
-          
-        out_shape = list(shape)
-        out_shape[self.axis] = new_dim
-        out_shape = tuple(out_shape)
-
-        out = array_api.full(out_shape, 0, device = args[0].device)
-        slices = [slice(0, dim) for dim in out.shape]
-        
-        start = 0
-        for i, arg in enumerate(args):
-            end = start + arg.shape[self.axis]
-            slices[self.axis] = slice(start, end)
-            out[tuple(slices)] = arg
-            start += arg.shape[self.axis]
-            self.lens.append(arg.shape[self.axis])
+        out, self.lens = array_api.concat(args, self.axis)
 
         return out
       
@@ -79,29 +53,23 @@ class SplitConcat(TensorTupleOp):
         self.axis = axis
         self.lens = lens
 
-    def compute(self, A):
-        ### BEGIN YOUR SOLUTION
+    def compute(self, a):
         out = []
-        slices = [slice(0, dim) for dim in A.shape]
+        slices = [slice(0, dim) for dim in a.shape]
         
         start = 0
         for ix in range(len(self.lens)):
             end = start + self.lens[ix]
             slices[self.axis] = slice(start, end)
-            out.append(A[tuple(slices)].compact())
+            out.append(a[tuple(slices)].compact())
             start += self.lens[ix]
             
         out = tuple(out)
         
         return out
-        # raise NotImplementedError()
-        ### END YOUR SOLUTION
 
     def gradient(self, out_grad, node):
-        ### BEGIN YOUR SOLUTION
-        return (concat(out_grad, self.axis), )
-        # raise NotImplementedError()
-        ### END YOUR SOLUTION
+        return (concat(out_grad, self.axis),)
 
 
 def split_concat(arg, axis, lens):
@@ -109,44 +77,8 @@ def split_concat(arg, axis, lens):
 
 
 class FFT1D(TensorOp):
-
-    def compute(self, x):
-        # N = x.shape[0]
-
-        # if N == 1:
-        #     arr = array_api.full((N, 2), 0, x.dtype, x.device)
-        #     arr[:, 0] = x
-        #     # pdb.set_trace()
-        #     return arr
-        #     # return Tensor(arr, device = x.device, dtype = x.dtype)
-
-        # else:
-        #     X_even = fft1d(Tensor(x[::2], device = x.device))
-        #     X_odd = fft1d(Tensor(x[1::2], device = x.device))
-            
-        #     factor = array_api.full((N, 2), 0, x.dtype, x.device)
-        #     factor[:, 1] = NDArray(range(N))
-        #     factor1 = Tensor(factor[:N // 2, :], device = x.device, dtype = x.dtype)
-        #     factor2 = Tensor(factor[N // 2:, :], device = x.device, dtype = x.dtype)
-        #     # pdb.set_trace()
-        #     # factor1 = factor[:N // 2, :]
-        #     # factor2 = factor[N // 2:, :]
-        #     factor1 = exp(-2 * PI * factor1 / N)
-        #     factor2 = exp(-2 * PI * factor2 / N)
-            
-        #     # pdb.set_trace()
-        #     # temp = factor1 * X_odd
-        #     print("BEFORE")
-        #     print(factor1.shape, factor2.shape, type(X_even), type(X_odd))
-        #     print(X_even.shape, X_odd.shape)
-        #     X = concat((X_even + factor1 * X_odd, X_even + factor2 * X_odd), 0)
-        #     print("CHECK", factor1.shape, factor2.shape)
-        #     print(type(X), X.shape)
-        #     # X = stack((X_even + factor1 * X_odd, X_even + factor2 * X_odd), 0)
-            
-        #     return X
-
-        return x.fft1d()
+    def compute(self, a):
+        return a.fft1d()
 
     def gradient(self, out_grad, node):
         pass
@@ -180,12 +112,8 @@ def ifft1d(a):
 
 
 class FFT2D(TensorOp):
-    def compute(self, x):
-        x = NDArray([fft1d(row) for row in x], dtype=np.complex128)
-        x = NDArray([fft1d(col) for col in transpose(x)], dtype=np.complex128)
-        x = transpose(x)
-
-        return x
+    def compute(self, a):
+        return a.fft2d()
 
     def gradient(self, out_grad, node):
         pass

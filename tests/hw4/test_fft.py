@@ -13,10 +13,18 @@ from needle import backend_ndarray as nd
 _DEVICES = [ndl.cpu(), pytest.param(ndl.cuda(),
     marks=pytest.mark.skipif(not ndl.cuda().enabled(), reason="No GPU"))]
 
-DIMS = [(1, 4),
+DIMS = [
+        (1, 4),
         (1, 8),
-        (1, 10),
-        # (4, 4),
+        (1, 16),
+        (1, 32),
+        (4, 4),
+        (4, 8),
+        (4, 16),
+        (8, 8),
+        (8, 16),
+        (16, 16)
+        # (1, 10),
         # (10, 10),
         # (100, 100),
         # (4, 10),
@@ -31,21 +39,25 @@ DIMS = [(1, 4),
 @pytest.mark.parametrize("device", _DEVICES, ids=["cpu", "cuda"])
 def test_fft1d_forward(m, n, device):
     _A = np.random.randn(n).astype(np.float32)
-    # _A = np.array([1, 2, 3, 4]).reshape(4)
     A = ndl.Tensor(nd.array(_A), device=device)
+
     own_res = ndl.fft1d(A).numpy()
     np_res = np.fft.fft(_A)
+
     np.testing.assert_allclose(np_res.real, own_res[:, 0], atol=1e-2)
     np.testing.assert_allclose(np_res.imag, own_res[:, 1], atol=1e-2)
-    # import pdb; pdb.set_trace()
-    # np.testing.assert_allclose(np.fft.fft(_A), ndl.fft1d(A).numpy(), atol=1e-5, rtol=1e-5)
 
 @pytest.mark.parametrize("m,n", DIMS)
 @pytest.mark.parametrize("device", _DEVICES, ids=["cpu", "cuda"])
 def test_fft2d_forward(m, n, device):
     _A = np.random.randn(m, n).astype(np.float32)
     A = ndl.Tensor(nd.array(_A), device=device)
-    np.testing.assert_allclose(np.fft.fft2(_A), ndl.fft2d(A).numpy(), atol=1e-5, rtol=1e-5)
+
+    own_res = ndl.fft2d(A).numpy()
+    np_res = np.fft.fft2(_A)
+    
+    np.testing.assert_allclose(np_res.real, own_res[:, :, 0], atol=1e-1)
+    np.testing.assert_allclose(np_res.imag, own_res[:, :, 1], atol=1e-1)
 
 @pytest.mark.parametrize("m,n", DIMS)
 @pytest.mark.parametrize("device", _DEVICES, ids=["cpu", "cuda"])

@@ -530,7 +530,8 @@ class NDArray:
         self.device.ewise_tanh(self.compact()._handle, out._handle)
         return out
 
-    def concat(self, args, axis):
+    @staticmethod
+    def concat(args, axis):
         assert len(args) > 0, "Concat needs at least one array"
           
         shape = args[0].shape
@@ -548,11 +549,12 @@ class NDArray:
         out_shape[axis] = new_dim
         out_shape = tuple(out_shape)
 
-        out = full(out_shape, 0, device = args[0].device)
+        out = full(out_shape, 0, dtype = args[0].dtype, device = args[0].device)
         slices = [slice(0, dim) for dim in out.shape]
         
         start = 0
         lens = []
+        
         for i, arg in enumerate(args):
             end = start + arg.shape[axis]
             slices[axis] = slice(start, end)
@@ -560,7 +562,7 @@ class NDArray:
             start += arg.shape[axis]
             lens.append(arg.shape[axis])
 
-        return out
+        return out, lens
 
     def complex_mul(self, other):
         corr = self * other
@@ -576,6 +578,8 @@ class NDArray:
     def complex_exp(self):
         out = full(self.shape, 0, self.dtype, self.device)
         exp_term = self[:, 0].exp()
+        # out[:, 0] = exp_term * self[:, 1].cos()
+        # out[:, 0] = exp_term * self[:, 1].sin()
         out[:, 0] = exp_term * NDArray(np.cos(self[:, 1].numpy()), device = self.device)
         out[:, 1] = exp_term * NDArray(np.sin(self[:, 1].numpy()), device = self.device)
 
@@ -585,35 +589,62 @@ class NDArray:
         N = self.shape[0]
 
         if N == 1:
-            arr = full((N, 2), 0, self.dtype, self.device)
-            arr[:, 0] = self[:]
-            return arr
+            if self.ndim > 1:
+                return self
+
+            out = full((N, 2), 0, self.dtype, self.device)
+            out[:, 0] = self[:]
+
+            return out
 
         else:
-            # X_even = self.fft1d(self[::2])
-            # X_odd = self.fft1d(self[1::2])
-            X_even = self[::2].fft1d()
-            X_odd = self[1::2].fft1d()
+            even = None
+            odd = None
+
+            if self.ndim > 1:
+                even = self[::2, :].fft1d()
+                odd = self[1::2, :].fft1d()
+
+            else:
+                even = self[::2].fft1d()
+                odd = self[1::2].fft1d()
             
-            # import pdb; pdb.set_trace()
             factor = full((N, 2), 0, self.dtype, self.device)
-            factor[:, 1] = NDArray(range(N))
-            factor1 = -2 * PI * factor[:N // 2, :] / N
-            factor2 = -2 * PI * factor[N // 2:, :] / N
+            factor[:, 1] = NDArray(range(N), device = self.device)
+            
+            factor1 = -2 * PI * factor[: N // 2, :] / N
             factor1 = factor1.complex_exp()
+            factor2 = -2 * PI * factor[N // 2 :, :] / N
             factor2 = factor2.complex_exp()
             
-            # temp = factor1 * X_odd
-            # print("BEFORE")
-            # print(factor1.shape, factor2.shape, type(X_even), type(X_odd))
-            # print(X_even.shape, X_odd.shape)
-            X = self.concat((X_even + X_odd.complex_mul(factor1), X_even + X_odd.complex_mul(factor2)), 0)
-            # X = concat((X_even + factor1 * X_odd, X_even + factor2 * X_odd), 0)
-            # print("CHECK", factor1.shape, factor2.shape)
-            # print(type(X), X.shape)
-            # X = stack((X_even + factor1 * X_odd, X_even + factor2 * X_odd), 0)
+            out, _ = concat((even + odd.complex_mul(factor1), even + odd.complex_mul(factor2)), 0)
             
-            return X
+            return out
+
+    def fft2d(self):
+        res = []
+
+        for ix in range(self.shape[0]):
+            row = self[ix, :].reshape((self.shape[1],))
+            row_res = row.fft1d()
+            row_res = row_res.reshape((1, self.shape[1], 2))
+            res.append(row_res)
+
+        res, _ = concat(tuple(res), 0)
+        res = res.permute((1, 0, 2)).compact()
+
+        out = []
+        for ix in range(res.shape[0]):
+            row = res[ix, :, :]
+            row = row.reshape((res.shape[1], 2))
+            row_res = row.fft1d()
+            row_res = row_res.reshape((1, res.shape[1], 2))
+            out.append(row_res)
+
+        out, _ = concat(tuple(out), 0)
+        out = out.permute((1, 0, 2)).compact()
+        
+        return out
 
     ### Matrix multiplication
     def __matmul__(self, other):
@@ -806,3 +837,6 @@ def sum(a, axis=None, keepdims=False):
 
 def flip(a, axes):
     return a.flip(axes)
+
+def concat(args, axis):
+    return NDArray.concat(args, axis)

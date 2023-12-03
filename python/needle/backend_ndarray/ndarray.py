@@ -5,6 +5,8 @@ import numpy as np
 from . import ndarray_backend_numpy
 from . import ndarray_backend_cpu
 
+PI = 3.142
+
 
 # math.prod not in Python 3.7
 def prod(x):
@@ -527,6 +529,91 @@ class NDArray:
         out = NDArray.make(self.shape, device=self.device)
         self.device.ewise_tanh(self.compact()._handle, out._handle)
         return out
+
+    def concat(self, args, axis):
+        assert len(args) > 0, "Concat needs at least one array"
+          
+        shape = args[0].shape
+        ref_shape = list(shape)
+        del ref_shape[axis]
+        new_dim = 0
+
+        for arg in args:
+          arg_shape = list(arg.shape)
+          new_dim += arg_shape[axis]
+          del arg_shape[axis]
+          assert ref_shape == arg_shape, "All arrays need to be of same size in all the non-concatenating axes"
+          
+        out_shape = list(shape)
+        out_shape[axis] = new_dim
+        out_shape = tuple(out_shape)
+
+        out = full(out_shape, 0, device = args[0].device)
+        slices = [slice(0, dim) for dim in out.shape]
+        
+        start = 0
+        lens = []
+        for i, arg in enumerate(args):
+            end = start + arg.shape[axis]
+            slices[axis] = slice(start, end)
+            out[tuple(slices)] = arg
+            start += arg.shape[axis]
+            lens.append(arg.shape[axis])
+
+        return out
+
+    def complex_mul(self, other):
+        corr = self * other
+        r1c2 = self[:, 0] * other[:, 1]
+        r2c1 = self[:, 1] * other[:, 0]
+
+        out = full(self.shape, 0, self.dtype, self.device)
+        out[:, 0] = corr[:, 0] - corr[:, 1]
+        out[:, 1] = r1c2 + r2c1
+
+        return out
+
+    def complex_exp(self):
+        out = full(self.shape, 0, self.dtype, self.device)
+        exp_term = self[:, 0].exp()
+        out[:, 0] = exp_term * NDArray(np.cos(self[:, 1].numpy()), device = self.device)
+        out[:, 1] = exp_term * NDArray(np.sin(self[:, 1].numpy()), device = self.device)
+
+        return out
+
+    def fft1d(self):
+        N = self.shape[0]
+
+        if N == 1:
+            arr = full((N, 2), 0, self.dtype, self.device)
+            arr[:, 0] = self[:]
+            return arr
+
+        else:
+            # X_even = self.fft1d(self[::2])
+            # X_odd = self.fft1d(self[1::2])
+            X_even = self[::2].fft1d()
+            X_odd = self[1::2].fft1d()
+            
+            # import pdb; pdb.set_trace()
+            factor = full((N, 2), 0, self.dtype, self.device)
+            factor[:, 1] = NDArray(range(N))
+            factor1 = -2 * PI * factor[:N // 2, :] / N
+            factor2 = -2 * PI * factor[N // 2:, :] / N
+            factor1 = factor1.complex_exp()
+            factor2 = factor2.complex_exp()
+            
+            # temp = factor1 * X_odd
+            # print("BEFORE")
+            # print(factor1.shape, factor2.shape, type(X_even), type(X_odd))
+            # print(X_even.shape, X_odd.shape)
+            X = self.concat((X_even + X_odd.complex_mul(factor1), X_even + X_odd.complex_mul(factor2)), 0)
+            # X = concat((X_even + factor1 * X_odd, X_even + factor2 * X_odd), 0)
+            # print("CHECK", factor1.shape, factor2.shape)
+            # print(type(X), X.shape)
+            # X = stack((X_even + factor1 * X_odd, X_even + factor2 * X_odd), 0)
+            
+            return X
 
     ### Matrix multiplication
     def __matmul__(self, other):

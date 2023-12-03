@@ -195,6 +195,22 @@ void ScalarAdd(const AlignedArray& a, scalar_t val, AlignedArray* out) {
 }
 
 
+/*
+Trignometry*/
+
+void EwiseSin(const AlignedArray& a, AlignedArray* out) {
+  for (size_t i = 0; i < a.size; i++) {
+    out->ptr[i] = sin(a.ptr[i]); 
+  }
+}
+
+void EwiseCos(const AlignedArray& a, AlignedArray* out) {
+  for (size_t i = 0; i < a.size; i++) {
+    out->ptr[i] = cos(a.ptr[i]); 
+  }
+}
+
+
 /**
  * In the code the follows, use the above template to create analogous element-wise
  * and and scalar operators for the following functions.  See the numpy backend for

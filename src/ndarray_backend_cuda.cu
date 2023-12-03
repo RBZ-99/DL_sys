@@ -233,6 +233,63 @@ void ScalarSetitem(size_t size, scalar_t val, CudaArray* out, std::vector<int32_
   /// END SOLUTION
 }
 
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Trignometric operations
+////////////////////////////////////////////////////////////////////////////////
+/*
+CUDA:
+__global__ void Sin/cos(float *angles, float *sineValues, float *cosineValues, int numElements) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+    // Check if the thread index is within the array bounds
+    if (idx < numElements) {
+        float angle = angles[idx];
+        sineValues[idx] = sinf(angle);
+        cosineValues[idx] = cosf(angle);
+    }
+} 
+*/
+
+__global__ void EwiseSinKernel(const scalar_t* a, scalar_t* out, size_t size) 
+{
+  size_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+  if (gid < size) 
+  {
+    float angle = a[gid];
+    out[gid] = sinf(angle);
+  }
+}
+
+void EwiseSin(const CudaArray& a, CudaArray* out) {
+  
+  CudaDims dim = CudaOneDim(out->size);
+  EwiseSinKernel<<<dim.grid, dim.block>>>(a.ptr, out->ptr, out->size);
+}
+
+__global__ void EwiseCosKernel(const scalar_t* a, scalar_t* out, size_t size) 
+{
+  size_t gid = blockIdx.x * blockDim.x + threadIdx.x;
+  if (gid < size) 
+  {
+    float angle = a[gid];
+    out[gid] = sinf(angle);
+  }
+}
+
+void EwiseCos(const CudaArray& a, CudaArray* out) {
+  
+  CudaDims dim = CudaOneDim(out->size);
+  EwiseCosKernel<<<dim.grid, dim.block>>>(a.ptr, out->ptr, out->size);
+}
+
+
+
+
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // Elementwise and scalar operations
 ////////////////////////////////////////////////////////////////////////////////
@@ -707,4 +764,9 @@ PYBIND11_MODULE(ndarray_backend_cuda, m) {
 
   m.def("reduce_max", ReduceMax);
   m.def("reduce_sum", ReduceSum);
+
+
+  m.def("EwiseSin", EwiseSin);
+  m.def("EwiseCos", EwiseCos);
+
 }

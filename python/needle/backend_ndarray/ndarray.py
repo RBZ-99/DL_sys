@@ -483,6 +483,17 @@ class NDArray:
 
     def __neg__(self):
         return self * (-1)
+    
+    def sin(self, other):
+        out = NDArray.make(self.shape, device=self.device)
+        self.device.EwiseSin(self.compact()._handle, other, out._handle)
+        return out
+
+    def cos(self, other):
+        out = NDArray.make(self.shape, device=self.device)
+        self.device.EwiseCos(self.compact()._handle, other, out._handle)
+        return out
+
 
     def __pow__(self, other):
         out = NDArray.make(self.shape, device=self.device)

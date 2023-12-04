@@ -89,19 +89,8 @@ def fft1d(a):
 
 
 class IFFT1D(TensorOp):
-    def compute(self, x):
-        N = x.shape[0]
-
-        if N == 1:
-            return x
-
-        else:
-            X_even = ifft1d(x[::2])
-            X_odd = ifft1d(x[1::2])
-            factor = exp(2j * PI * NDArray(range(N)) / N)
-            x = stack((X_even + factor[:int(N / 2)] * X_odd, X_even - factor[int(N / 2):] * X_odd), 0)
-
-            return x / 2 
+    def compute(self, a):
+        return a.ifft1d()
 
     def gradient(self, out_grad, node):
         pass
@@ -125,10 +114,7 @@ def fft2d(a):
 
 class IFFT2D(TensorOp):
     def compute(self, a):
-        x = np.array([IFFT_forward(row) for row in x], dtype=np.complex128)
-        x = np.array([IFFT_forward(col) for col in x.T], dtype=np.complex128).T
-
-        return x
+      return a.ifft2d()
 
     def gradient(self, out_grad, node):
         pass

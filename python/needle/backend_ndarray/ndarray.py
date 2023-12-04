@@ -484,16 +484,15 @@ class NDArray:
     def __neg__(self):
         return self * (-1)
     
-    def sin(self, other):
+    def sin(self):
         out = NDArray.make(self.shape, device=self.device)
-        self.device.EwiseSin(self.compact()._handle, other, out._handle)
+        self.device.ewise_sin(self.compact()._handle, out._handle)
         return out
 
-    def cos(self, other):
+    def cos(self):
         out = NDArray.make(self.shape, device=self.device)
-        self.device.EwiseCos(self.compact()._handle, other, out._handle)
+        self.device.ewise_cos(self.compact()._handle, out._handle)
         return out
-
 
     def __pow__(self, other):
         out = NDArray.make(self.shape, device=self.device)
@@ -636,6 +635,12 @@ class NDArray:
         res = []
 
         for ix in range(self.shape[0]):
+            row = None
+            if self.ndim > 2:
+                row = self[ix, :, :].reshape((self.shape[1], self.shape[2]))
+            else:
+                row = self[ix, :].reshape((self.shape[1],))
+            
             row = self[ix, :].reshape((self.shape[1],))
             row_res = row.fft1d()
             row_res = row_res.reshape((1, self.shape[1], 2))
@@ -649,6 +654,70 @@ class NDArray:
             row = res[ix, :, :]
             row = row.reshape((res.shape[1], 2))
             row_res = row.fft1d()
+            row_res = row_res.reshape((1, res.shape[1], 2))
+            out.append(row_res)
+
+        out, _ = concat(tuple(out), 0)
+        out = out.permute((1, 0, 2)).compact()
+        
+        return out
+
+    def ifft1d(self):
+        N = self.shape[0]
+
+        if N == 1:
+            if self.ndim > 1:
+                return self
+
+            out = full((N, 2), 0, self.dtype, self.device)
+            out[:, 0] = self[:]
+
+            return out
+
+        else:
+            even = None
+            odd = None
+
+            if self.ndim > 1:
+                even = self[::2, :].ifft1d()
+                odd = self[1::2, :].ifft1d()
+
+            else:
+                even = self[::2].ifft1d()
+                odd = self[1::2].ifft1d()
+            
+            factor = full((N // 2, 2), 0, self.dtype, self.device)
+            factor[:, 1] = NDArray(range(N // 2), device = self.device)            
+            factor = 2 * PI * factor / N
+            factor = factor.complex_exp()
+            
+            out, _ = concat((even + odd.complex_mul(factor), even - odd.complex_mul(factor)), 0)
+            out /= 2
+
+            return out
+
+    def ifft2d(self):
+        res = []
+
+        for ix in range(self.shape[0]):
+            row = None
+            if self.ndim > 2:
+                row = self[ix, :, :].reshape((self.shape[1], self.shape[2]))
+            else:
+                row = self[ix, :].reshape((self.shape[1],))
+            
+            row_res = row.ifft1d()
+            row_res = row_res.reshape((1, self.shape[1], 2))
+            res.append(row_res)
+
+        res, _ = concat(tuple(res), 0)
+        res = res.permute((1, 0, 2)).compact()
+
+        out = []
+        for ix in range(res.shape[0]):
+            row = res[ix, :, :]
+            row = row.reshape((res.shape[1], 2))
+            row_res = row.ifft1d()
             row_res = row_res.reshape((1, res.shape[1], 2))
             out.append(row_res)
 
@@ -848,6 +917,7 @@ def sum(a, axis=None, keepdims=False):
 
 def flip(a, axes):
     return a.flip(axes)
+
 
 def concat(args, axis):
     return NDArray.concat(args, axis)

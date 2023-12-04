@@ -588,10 +588,8 @@ class NDArray:
     def complex_exp(self):
         out = full(self.shape, 0, self.dtype, self.device)
         exp_term = self[:, 0].exp()
-        # out[:, 0] = exp_term * self[:, 1].cos()
-        # out[:, 0] = exp_term * self[:, 1].sin()
-        out[:, 0] = exp_term * NDArray(np.cos(self[:, 1].numpy()), device = self.device)
-        out[:, 1] = exp_term * NDArray(np.sin(self[:, 1].numpy()), device = self.device)
+        out[:, 0] = exp_term * self[:, 1].cos()
+        out[:, 1] = exp_term * self[:, 1].sin()
 
         return out
 

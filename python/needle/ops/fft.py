@@ -122,3 +122,33 @@ class IFFT2D(TensorOp):
 
 def ifft2d(a):
     return IFFT2D()(a)
+
+
+
+class Sin(TensorOp):
+    def compute(self, a):
+        return array_api.Sin(a)
+
+    def gradient(self, out_grad, node):
+        a = node.inputs[0]
+        grad = cos(a)
+        grad *= out_grad
+        return (grad,)
+
+def sin(a):
+    return Sin()(a)
+
+
+
+class Cos(TensorOp):
+    def compute(self, a):
+        return array_api.Cos(a)
+
+    def gradient(self, out_grad, node):
+        a = node.inputs[0]
+        grad = -(sin(a)) 
+        grad *= out_grad
+        return (grad,)
+
+def cos(a):
+    return Cos()(a)

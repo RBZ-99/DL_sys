@@ -18,12 +18,12 @@ DIMS = [
         (1, 8),
         (1, 16),
         (1, 32),
-        # (4, 4),
-        # (4, 8),
-        # (4, 16),
-        # (8, 8),
-        # (8, 16),
-        # (16, 16)
+        (4, 4),
+        (4, 8),
+        (4, 16),
+        (8, 8),
+        (8, 16),
+        (16, 16),
         # (1, 10),
         # (10, 10),
         # (100, 100),
@@ -104,6 +104,8 @@ def backward_check(f, *args, **kwargs):
             args[i].realize_cached_data().flat[j] += eps
             numerical_grad[i].flat[j] = (f1 - f2) / (2 * eps)
     backward_grad = out.op.gradient_as_tuple(ndl.Tensor(c, device=args[0].device), out)
+    print(backward_grad)
+    print(numerical_grad)
     error = sum(
         np.linalg.norm(backward_grad[i].numpy() - numerical_grad[i])
         for i in range(len(args))

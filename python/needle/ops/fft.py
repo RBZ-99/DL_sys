@@ -82,25 +82,8 @@ class FFT1D(TensorOp):
         return a.fft1d()
 
     def gradient(self, out_grad, node):
-        a = node.inputs[0]
-        N = a.shape[0]
+        grad = out_grad.realize_cached_data().fft1d(conjugate = True)[:, 0]
 
-        base = NDArray(range(N), device = out_grad.device)
-        jacob_init = base.reshape((1, N)).broadcast_to((N, N))
-        mul = base.reshape((N, 1)).broadcast_to((N, N))
-        jacob_init = jacob_init * mul
-        
-        jacob = array_api.full((N, N, 2), 0, out_grad.dtype, out_grad.device)
-        jacob[:, :, 1] = NDArray(-2 * PI * jacob_init / N, device = out_grad.device)
-        jacob = jacob.reshape((N * N, 2)).complex_exp().reshape((N, N, 2))
-        jacob[:, :, 1] *= -1
-
-        out_grad_arr = out_grad.realize_cached_data()
-        
-        rr = jacob[:, :, 0].reshape((N, N)) @ out_grad_arr[:, 0].reshape((N, 1))
-        cc = jacob[:, :, 1].reshape((N, N)) @ out_grad_arr[:, 1].reshape((N, 1))
-        grad = rr - cc 
-        
         return (grad,)
 
 
@@ -120,25 +103,8 @@ class IFFT1D(TensorOp):
         return a.ifft1d()
 
     def gradient(self, out_grad, node):
-        a = node.inputs[0]
-        N = a.shape[0]
+        grad = out_grad.realize_cached_data().ifft1d(conjugate = True)[:, 0]
 
-        base = NDArray(range(N), device = out_grad.device)
-        jacob_init = base.reshape((1, N)).broadcast_to((N, N))
-        mul = base.reshape((N, 1)).broadcast_to((N, N))
-        jacob_init = jacob_init * mul
-        
-        jacob = array_api.full((N, N, 2), 0, out_grad.dtype, out_grad.device)
-        jacob[:, :, 1] = NDArray(2 * PI * jacob_init / N, device = out_grad.device)
-        jacob = jacob.reshape((N * N, 2)).complex_exp().reshape((N, N, 2)) / N
-        jacob[:, :, 1] *= -1
-
-        out_grad_arr = out_grad.realize_cached_data()
-        
-        rr = jacob[:, :, 0].reshape((N, N)) @ out_grad_arr[:, 0].reshape((N, 1))
-        cc = jacob[:, :, 1].reshape((N, N)) @ out_grad_arr[:, 1].reshape((N, 1))
-        grad = rr - cc 
-        
         return (grad,)
 
 
@@ -151,7 +117,9 @@ class FFT2D(TensorOp):
         return a.fft2d()
 
     def gradient(self, out_grad, node):
-        pass
+        grad = out_grad.realize_cached_data().fft2d(conjugate = True)[:, :, 0]
+
+        return (grad,)
 
 
 def fft2d(a):
@@ -163,7 +131,9 @@ class IFFT2D(TensorOp):
       return a.ifft2d()
 
     def gradient(self, out_grad, node):
-        pass
+        grad = out_grad.realize_cached_data().ifft2d(conjugate = True)[:, :, 0]
+
+        return (grad,)
 
 
 def ifft2d(a):

@@ -588,12 +588,14 @@ class NDArray:
     def complex_exp(self):
         out = full(self.shape, 0, self.dtype, self.device)
         exp_term = self[:, 0].exp()
-        out[:, 0] = exp_term * self[:, 1].cos()
-        out[:, 1] = exp_term * self[:, 1].sin()
+        # out[:, 0] = exp_term * self[:, 1].cos()
+        # out[:, 0] = exp_term * self[:, 1].sin()
+        out[:, 0] = exp_term * NDArray(np.cos(self[:, 1].numpy()), device = self.device)
+        out[:, 1] = exp_term * NDArray(np.sin(self[:, 1].numpy()), device = self.device)
 
         return out
 
-    def fft1d(self):
+    def fft1d(self, conjugate = False):
         N = self.shape[0]
 
         if N == 1:
@@ -610,12 +612,12 @@ class NDArray:
             odd = None
 
             if self.ndim > 1:
-                even = self[::2, :].fft1d()
-                odd = self[1::2, :].fft1d()
+                even = self[::2, :].fft1d(conjugate)
+                odd = self[1::2, :].fft1d(conjugate)
 
             else:
-                even = self[::2].fft1d()
-                odd = self[1::2].fft1d()
+                even = self[::2].fft1d(conjugate)
+                odd = self[1::2].fft1d(conjugate)
             
             factor = full((N, 2), 0, self.dtype, self.device)
             factor[:, 1] = NDArray(range(N), device = self.device)
@@ -625,11 +627,15 @@ class NDArray:
             factor2 = -2 * PI * factor[N // 2 :, :] / N
             factor2 = factor2.complex_exp()
             
+            if conjugate:
+                factor1[:, 1] *= -1
+                factor2[:, 1] *= -1
+
             out, _ = concat((even + odd.complex_mul(factor1), even + odd.complex_mul(factor2)), 0)
             
             return out
 
-    def fft2d(self):
+    def fft2d(self, conjugate = False):
         res = []
 
         for ix in range(self.shape[0]):
@@ -639,8 +645,7 @@ class NDArray:
             else:
                 row = self[ix, :].reshape((self.shape[1],))
             
-            row = self[ix, :].reshape((self.shape[1],))
-            row_res = row.fft1d()
+            row_res = row.fft1d(conjugate)
             row_res = row_res.reshape((1, self.shape[1], 2))
             res.append(row_res)
 
@@ -651,7 +656,7 @@ class NDArray:
         for ix in range(res.shape[0]):
             row = res[ix, :, :]
             row = row.reshape((res.shape[1], 2))
-            row_res = row.fft1d()
+            row_res = row.fft1d(conjugate)
             row_res = row_res.reshape((1, res.shape[1], 2))
             out.append(row_res)
 
@@ -660,7 +665,7 @@ class NDArray:
         
         return out
 
-    def ifft1d(self):
+    def ifft1d(self, conjugate = False):
         N = self.shape[0]
 
         if N == 1:
@@ -677,24 +682,27 @@ class NDArray:
             odd = None
 
             if self.ndim > 1:
-                even = self[::2, :].ifft1d()
-                odd = self[1::2, :].ifft1d()
+                even = self[::2, :].ifft1d(conjugate)
+                odd = self[1::2, :].ifft1d(conjugate)
 
             else:
-                even = self[::2].ifft1d()
-                odd = self[1::2].ifft1d()
+                even = self[::2].ifft1d(conjugate)
+                odd = self[1::2].ifft1d(conjugate)
             
             factor = full((N // 2, 2), 0, self.dtype, self.device)
             factor[:, 1] = NDArray(range(N // 2), device = self.device)            
             factor = 2 * PI * factor / N
             factor = factor.complex_exp()
-            
+
+            if conjugate:
+                factor[:, 1] *= -1
+                
             out, _ = concat((even + odd.complex_mul(factor), even - odd.complex_mul(factor)), 0)
             out /= 2
 
             return out
 
-    def ifft2d(self):
+    def ifft2d(self, conjugate = False):
         res = []
 
         for ix in range(self.shape[0]):
@@ -704,7 +712,7 @@ class NDArray:
             else:
                 row = self[ix, :].reshape((self.shape[1],))
             
-            row_res = row.ifft1d()
+            row_res = row.ifft1d(conjugate)
             row_res = row_res.reshape((1, self.shape[1], 2))
             res.append(row_res)
 
@@ -715,7 +723,7 @@ class NDArray:
         for ix in range(res.shape[0]):
             row = res[ix, :, :]
             row = row.reshape((res.shape[1], 2))
-            row_res = row.ifft1d()
+            row_res = row.ifft1d(conjugate)
             row_res = row_res.reshape((1, res.shape[1], 2))
             out.append(row_res)
 

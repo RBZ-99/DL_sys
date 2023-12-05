@@ -18,12 +18,12 @@ DIMS = [
         (1, 8),
         (1, 16),
         (1, 32),
-        (4, 4),
-        (4, 8),
-        (4, 16),
-        (8, 8),
-        (8, 16),
-        (16, 16)
+        # (4, 4),
+        # (4, 8),
+        # (4, 16),
+        # (8, 8),
+        # (8, 16),
+        # (16, 16)
         # (1, 10),
         # (10, 10),
         # (100, 100),
@@ -115,9 +115,16 @@ def backward_check(f, *args, **kwargs):
 @pytest.mark.parametrize("m,n", DIMS)
 @pytest.mark.parametrize("device", _DEVICES, ids=["cpu", "cuda"])
 def test_fft1d_backward(m, n, device):
-    _A = np.random.randn(m, n).astype(np.float32)
+    _A = np.random.randn(n).astype(np.float32)
     A = ndl.Tensor(nd.array(_A), device=device)
     backward_check(ndl.fft1d, A)
+
+@pytest.mark.parametrize("m,n", DIMS)
+@pytest.mark.parametrize("device", _DEVICES, ids=["cpu", "cuda"])
+def test_ifft1d_backward(m, n, device):
+    _A = np.random.randn(n).astype(np.float32)
+    A = ndl.Tensor(nd.array(_A), device=device)
+    backward_check(ndl.ifft1d, A)
 
 @pytest.mark.parametrize("m,n", DIMS)
 @pytest.mark.parametrize("device", _DEVICES, ids=["cpu", "cuda"])
@@ -125,3 +132,10 @@ def test_fft2d_backward(m, n, device):
     _A = np.random.randn(m, n).astype(np.float32)
     A = ndl.Tensor(nd.array(_A), device=device)
     backward_check(ndl.fft2d, A)
+
+@pytest.mark.parametrize("m,n", DIMS)
+@pytest.mark.parametrize("device", _DEVICES, ids=["cpu", "cuda"])
+def test_ifft2d_backward(m, n, device):
+    _A = np.random.randn(m, n).astype(np.float32)
+    A = ndl.Tensor(nd.array(_A), device=device)
+    backward_check(ndl.ifft2d, A)

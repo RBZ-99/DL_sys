@@ -4,6 +4,7 @@ from .backend_numpy import Device, cpu, all_devices
 from typing import List, Optional, NamedTuple, Tuple, Union
 from collections import namedtuple
 import numpy
+import pdb
 
 from needle import init
 
@@ -297,6 +298,15 @@ class Tensor(Value):
         )
         compute_gradient_of_variables(self, out_grad)
         # import pdb; pdb.set_trace()
+    
+    def reset(self, out_grad=None):
+        out_grad = (
+            out_grad
+            if out_grad
+            else init.ones(*self.shape, dtype=self.dtype, device=self.device)
+        )
+        reset_gradient_of_variables(self, out_grad)
+        # import pdb; pdb.set_trace()
 
     def __repr__(self):
         return "needle.Tensor(" + str(self.realize_cached_data()) + ")"
@@ -367,6 +377,21 @@ class Tensor(Value):
     __rmatmul__ = __matmul__
 
 
+def reset_gradient_of_variables(output_tensor, out_grad):
+    """Take gradient of output node with respect to each node in node_list.
+
+    Store the computed result in the grad field of each Variable.
+    """
+    node_to_output_grads_list: Dict[Tensor, List[Tensor]] = {}
+   
+    node_to_output_grads_list[output_tensor] = [out_grad]
+
+    reverse_topo_order = list(reversed(find_topo_sort([output_tensor])))
+
+    for node in reverse_topo_order:
+        node.grad = None
+
+
 def compute_gradient_of_variables(output_tensor, out_grad):
     """Take gradient of output node with respect to each node in node_list.
 
@@ -383,12 +408,15 @@ def compute_gradient_of_variables(output_tensor, out_grad):
     reverse_topo_order = list(reversed(find_topo_sort([output_tensor])))
 
     ### BEGIN YOUR SOLUTION
+    import sys
+    #pdb.set_trace()
     for node in reverse_topo_order:
         adj = sum_node_list(node_to_output_grads_list[node])
         # print(adj)
         if adj is None:
             pdb.set_trace()
         node.grad = adj
+        #print(sys.getsizeof(node.grad.realize_cached_data()._handle))
 
         if node.op is not None:
             # print(node.op, type(adj), type(node))
@@ -402,6 +430,7 @@ def compute_gradient_of_variables(output_tensor, out_grad):
                     node_to_output_grads_list[inp_node] = []
 
                 node_to_output_grads_list[inp_node].append(partial_adjs[ix])
+    #pdb.set_trace()
     # raise NotImplementedError()
     ### END YOUR SOLUTION
 

@@ -12,7 +12,7 @@ import needle as ndl
 import needle.nn as nn
 from apps.models import *
 import time
-device = ndl.cpu()
+device = ndl.cuda()
 
 def parse_mnist(image_filesname, label_filename):
     """Read an images and labels file in MNIST format.  See this page:

@@ -1,0 +1,6 @@
+Using needle backend
+Epoch 0
+batch 0
+> /home/rushikesh/Projects/dlsys/DL_sys/python/needle/nn/nn_ffcnn.py(53)forward()
+-> batch_size,b = x.shape
+(Pdb) 

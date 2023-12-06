@@ -55,6 +55,8 @@ class Module:
 
     def parameters(self) -> List[Tensor]:
         """Return the list of parameters in the module."""
+        import pdb
+        #pdb.set_trace()
         return _unpack_params(self.__dict__)
 
     def _children(self) -> List["Module"]:

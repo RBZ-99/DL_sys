@@ -1,7 +1,7 @@
 """Optimization module"""
 import needle as ndl
 import numpy as np
-
+import pdb
 
 class Optimizer:
     def __init__(self, params):
@@ -12,7 +12,10 @@ class Optimizer:
 
     def reset_grad(self):
         for p in self.params:
-            p.grad = None
+            if hasattr(p,"grad"):
+                #pdb.set_trace()
+                del p.grad
+            #p.grad = None
 
 
 class SGD(Optimizer):
@@ -98,6 +101,7 @@ class Adam(Optimizer):
 
             self.m[ix] = mt_1
             self.v[ix] = vt_1
-            
+        
+        
         # raise NotImplementedError()
         ### END YOUR SOLUTION

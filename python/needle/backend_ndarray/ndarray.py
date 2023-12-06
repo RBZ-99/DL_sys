@@ -80,7 +80,7 @@ def cpu():
 
 
 def default_device():
-    return cpu()
+    return cuda()
 
 
 def all_devices():
@@ -628,7 +628,6 @@ class NDArray:
     def fft2d(self, conjugate = False):
         batch_size, M, N = self.shape[:3]
         arr = self
-        
 
         if self.ndim == 3:
             arr = full((batch_size, M, N, 2), 0, self.dtype, self.device)
@@ -647,6 +646,9 @@ class NDArray:
         return out
 
     def ifft1d(self, conjugate = False):
+        import pdb
+        print("count me")
+        #pdb.set_trace()
         batch_size, N = self.shape[:2]
         arr = self
 
@@ -654,12 +656,14 @@ class NDArray:
             arr = full((batch_size, N, 2), 0, self.dtype, self.device)
             arr[:, :, 0] = self[:, :]
 
-        if N == 1:
+        if N <= 1:
             return arr
 
         else:
             even = arr[:, ::2, :].ifft1d(conjugate)
             odd = arr[:, 1::2, :].ifft1d(conjugate)
+            import pdb
+            #pdb.set_trace()
             
             factor = full((batch_size, N // 2, 2), 0, self.dtype, self.device)
             factor_init = NDArray(range(N // 2), device = self.device)
@@ -671,12 +675,15 @@ class NDArray:
             if conjugate:
                 factor[:, :, 1] *= -1
 
-            out, _ = concat((even + odd.complex_mul(factor), even - odd.complex_mul(factor)), 1)
+            out, _ = concat((even + odd.complex_mul(factor[:, :N // 2, :]), even + odd.complex_mul(factor[:, N // 2:, :])), 1) #concat((even + odd.complex_mul(factor), even - odd.complex_mul(factor)), 1)
             out /= 2
 
             return out
 
+   
+
     def ifft2d(self, conjugate = False):
+        #pdb.set_trace()
         batch_size, M, N = self.shape[:3]
         arr = self
 
@@ -693,6 +700,7 @@ class NDArray:
             arr = arr.reshape((batch_size * M, N, 2))
         except:
             pdb.set_trace()
+        pdb.set_trace()
         res = arr.ifft1d(conjugate)
         res = res.reshape((batch_size, M, N, 2))
         res = res.permute((0, 2, 1, 3)).compact()

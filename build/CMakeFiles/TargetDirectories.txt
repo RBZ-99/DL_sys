@@ -1,3 +1,4 @@
-/Users/rushikeshzawar/Downloads/Personal/CMU_COURSES/dlsys/project/repo/DL_sys/build/CMakeFiles/ndarray_backend_cpu.dir
-/Users/rushikeshzawar/Downloads/Personal/CMU_COURSES/dlsys/project/repo/DL_sys/build/CMakeFiles/edit_cache.dir
-/Users/rushikeshzawar/Downloads/Personal/CMU_COURSES/dlsys/project/repo/DL_sys/build/CMakeFiles/rebuild_cache.dir
+/home/rushikesh/Projects/dlsys/DL_sys/build/CMakeFiles/ndarray_backend_cpu.dir
+/home/rushikesh/Projects/dlsys/DL_sys/build/CMakeFiles/ndarray_backend_cuda.dir
+/home/rushikesh/Projects/dlsys/DL_sys/build/CMakeFiles/edit_cache.dir
+/home/rushikesh/Projects/dlsys/DL_sys/build/CMakeFiles/rebuild_cache.dir

@@ -576,157 +576,121 @@ class NDArray:
 
     def complex_mul(self, other):
         corr = self * other
-        r1c2 = self[:, 0] * other[:, 1]
-        r2c1 = self[:, 1] * other[:, 0]
+        r1c2 = self[:, :, 0] * other[:, :, 1]
+        r2c1 = self[:, :, 1] * other[:, :, 0]
 
         out = full(self.shape, 0, self.dtype, self.device)
-        out[:, 0] = corr[:, 0] - corr[:, 1]
-        out[:, 1] = r1c2 + r2c1
+        out[:, :, 0] = corr[:, :, 0] - corr[:, :, 1]
+        out[:, :, 1] = r1c2 + r2c1
 
         return out
 
     def complex_exp(self):
         out = full(self.shape, 0, self.dtype, self.device)
-        exp_term = self[:, 0].exp()
-        out[:, 0] = exp_term * self[:, 1].cos()
-        out[:, 0] = exp_term * self[:, 1].sin()
+        exp_term = self[:, :, 0].exp()
+        # out[:, 0] = exp_term * self[:, :, 1].cos()
+        # out[:, 0] = exp_term * self[:, :, 1].sin()
+        out[:, :, 0] = exp_term * NDArray(np.cos(self[:, :, 1].numpy()), device = self.device)
+        out[:, :, 1] = exp_term * NDArray(np.sin(self[:, :, 1].numpy()), device = self.device)
 
         return out
 
     def fft1d(self, conjugate = False):
-        N = self.shape[0]
+        batch_size, N = self.shape[:2]
+        arr = self
+
+        if self.ndim == 2:
+            arr = full((batch_size, N, 2), 0, self.dtype, self.device)
+            arr[:, :, 0] = self[:, :]
 
         if N == 1:
-            if self.ndim > 1:
-                return self
-
-            out = full((N, 2), 0, self.dtype, self.device)
-            out[:, 0] = self[:]
-
-            return out
+            return arr
 
         else:
-            even = None
-            odd = None
+            even = arr[:, ::2, :].fft1d(conjugate)
+            odd = arr[:, 1::2, :].fft1d(conjugate)
+            
+            factor = full((batch_size, N, 2), 0, self.dtype, self.device)
+            factor_init = NDArray(range(N), device = self.device)
+            factor_init = factor_init.reshape((1, N)).broadcast_to((batch_size, N)) 
+            factor[:, :, 1] = factor_init
+            factor = -2 * PI * factor / N
+            factor = factor.complex_exp()
 
-            if self.ndim > 1:
-                even = self[::2, :].fft1d(conjugate)
-                odd = self[1::2, :].fft1d(conjugate)
-
-            else:
-                even = self[::2].fft1d(conjugate)
-                odd = self[1::2].fft1d(conjugate)
-            
-            factor = full((N, 2), 0, self.dtype, self.device)
-            factor[:, 1] = NDArray(range(N), device = self.device)
-            
-            factor1 = -2 * PI * factor[: N // 2, :] / N
-            factor1 = factor1.complex_exp()
-            factor2 = -2 * PI * factor[N // 2 :, :] / N
-            factor2 = factor2.complex_exp()
-            
             if conjugate:
-                factor1[:, 1] *= -1
-                factor2[:, 1] *= -1
+                factor[:, :, 1] *= -1
 
-            out, _ = concat((even + odd.complex_mul(factor1), even + odd.complex_mul(factor2)), 0)
+            out, _ = concat((even + odd.complex_mul(factor[:, :N // 2, :]), even + odd.complex_mul(factor[:, N // 2:, :])), 1)
             
             return out
 
     def fft2d(self, conjugate = False):
-        res = []
+        batch_size, M, N = self.shape[:3]
+        arr = self
 
-        for ix in range(self.shape[0]):
-            row = None
-            if self.ndim > 2:
-                row = self[ix, :, :].reshape((self.shape[1], self.shape[2]))
-            else:
-                row = self[ix, :].reshape((self.shape[1],))
-            
-            row_res = row.fft1d(conjugate)
-            row_res = row_res.reshape((1, self.shape[1], 2))
-            res.append(row_res)
+        if self.ndim == 3:
+            arr = full((batch_size, M, N, 2), 0, self.dtype, self.device)
+            arr[:, :, :, 0] = self[:, :, :]
 
-        res, _ = concat(tuple(res), 0)
-        res = res.permute((1, 0, 2)).compact()
-
-        out = []
-        for ix in range(res.shape[0]):
-            row = res[ix, :, :]
-            row = row.reshape((res.shape[1], 2))
-            row_res = row.fft1d(conjugate)
-            row_res = row_res.reshape((1, res.shape[1], 2))
-            out.append(row_res)
-
-        out, _ = concat(tuple(out), 0)
-        out = out.permute((1, 0, 2)).compact()
+        arr = arr.reshape((batch_size * M, N, 2))
+        res = arr.fft1d(conjugate)
+        res = res.reshape((batch_size, M, N, 2))
+        res = res.permute((0, 2, 1, 3)).compact()
+        
+        res = res.reshape((batch_size * N, M, 2))
+        out = res.fft1d(conjugate)
+        out = out.reshape((batch_size, N, M, 2))
+        out = out.permute((0, 2, 1, 3)).compact()
         
         return out
 
     def ifft1d(self, conjugate = False):
-        N = self.shape[0]
+        batch_size, N = self.shape[:2]
+        arr = self
+
+        if self.ndim == 2:
+            arr = full((batch_size, N, 2), 0, self.dtype, self.device)
+            arr[:, :, 0] = self[:, :]
 
         if N == 1:
-            if self.ndim > 1:
-                return self
-
-            out = full((N, 2), 0, self.dtype, self.device)
-            out[:, 0] = self[:]
-
-            return out
+            return arr
 
         else:
-            even = None
-            odd = None
-
-            if self.ndim > 1:
-                even = self[::2, :].ifft1d(conjugate)
-                odd = self[1::2, :].ifft1d(conjugate)
-
-            else:
-                even = self[::2].ifft1d(conjugate)
-                odd = self[1::2].ifft1d(conjugate)
+            even = arr[:, ::2, :].ifft1d(conjugate)
+            odd = arr[:, 1::2, :].ifft1d(conjugate)
             
-            factor = full((N // 2, 2), 0, self.dtype, self.device)
-            factor[:, 1] = NDArray(range(N // 2), device = self.device)            
+            factor = full((batch_size, N // 2, 2), 0, self.dtype, self.device)
+            factor_init = NDArray(range(N // 2), device = self.device)
+            factor_init = factor_init.reshape((1, N // 2)).broadcast_to((batch_size, N // 2)) 
+            factor[:, :, 1] = factor_init
             factor = 2 * PI * factor / N
             factor = factor.complex_exp()
 
             if conjugate:
-                factor[:, 1] *= -1
-                
-            out, _ = concat((even + odd.complex_mul(factor), even - odd.complex_mul(factor)), 0)
+                factor[:, :, 1] *= -1
+
+            out, _ = concat((even + odd.complex_mul(factor), even - odd.complex_mul(factor)), 1)
             out /= 2
 
             return out
 
     def ifft2d(self, conjugate = False):
-        res = []
+        batch_size, M, N = self.shape[:3]
+        arr = self
 
-        for ix in range(self.shape[0]):
-            row = None
-            if self.ndim > 2:
-                row = self[ix, :, :].reshape((self.shape[1], self.shape[2]))
-            else:
-                row = self[ix, :].reshape((self.shape[1],))
-            
-            row_res = row.ifft1d(conjugate)
-            row_res = row_res.reshape((1, self.shape[1], 2))
-            res.append(row_res)
+        if self.ndim == 3:
+            arr = full((batch_size, M, N, 2), 0, self.dtype, self.device)
+            arr[:, :, :, 0] = self[:, :, :]
 
-        res, _ = concat(tuple(res), 0)
-        res = res.permute((1, 0, 2)).compact()
-
-        out = []
-        for ix in range(res.shape[0]):
-            row = res[ix, :, :]
-            row = row.reshape((res.shape[1], 2))
-            row_res = row.ifft1d(conjugate)
-            row_res = row_res.reshape((1, res.shape[1], 2))
-            out.append(row_res)
-
-        out, _ = concat(tuple(out), 0)
-        out = out.permute((1, 0, 2)).compact()
+        arr = arr.reshape((batch_size * M, N, 2))
+        res = arr.ifft1d(conjugate)
+        res = res.reshape((batch_size, M, N, 2))
+        res = res.permute((0, 2, 1, 3)).compact()
+        
+        res = res.reshape((batch_size * N, M, 2))
+        out = res.ifft1d(conjugate)
+        out = out.reshape((batch_size, N, M, 2))
+        out = out.permute((0, 2, 1, 3)).compact()
         
         return out
 

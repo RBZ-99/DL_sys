@@ -37,6 +37,28 @@ def parse_mnist(image_filesname, label_filename):
                 for MNIST will contain the values 0-9.
     """
     ### BEGIN YOUR SOLUTION
+    with gzip.open(image_filename, "rb") as f:
+      magic, n, h, w = struct.unpack(">IIII", f.read(16))
+      iter = struct.iter_unpack(">B", f.read())
+      X = []
+
+      for elem in iter:
+        X.append(elem)
+
+      X = np.resize(np.array(X), (n, h * w)).astype(np.float32)
+      X = X / 255.0
+
+    with gzip.open(label_filename, "rb") as f:
+      magic, n = struct.unpack(">II", f.read(8))
+      iter = struct.iter_unpack(">B", f.read())
+      y = []
+
+      for elem in iter:
+        y.append(elem)
+
+      y = np.resize(np.array(y).astype(np.uint8), (n,))
+
+    return (X, y)
     # raise NotImplementedError()
     ### END YOUR SOLUTION
 
@@ -58,7 +80,13 @@ def softmax_loss(Z, y_one_hot):
         Average softmax loss over the sample. (ndl.Tensor[np.float32])
     """
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    z = ndl.log(ndl.summation(ndl.exp(Z), axes = (1,)))
+    zy = ndl.summation(ndl.multiply(Z, y_one_hot), axes = (1,))
+    losses = z - zy
+    mean_loss = ndl.divide_scalar(ndl.summation(losses), Z.shape[0])
+
+    return mean_loss
+    # raise NotImplementedError()
     ### END YOUR SOLUTION
 
 
@@ -87,7 +115,23 @@ def nn_epoch(X, y, W1, W2, lr=0.1, batch=100):
     """
 
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    for i in range(0, X.shape[0], batch):
+        curr_X = ndl.Tensor(X[i : i + batch], device = W1.device, requires_grad = True)
+        y_batch = np.zeros((batch, W2.shape[1]))
+        y_batch[range(batch), y[i : i + batch]] = 1
+        curr_y = ndl.Tensor(y_batch, device = W1.device, requires_grad = True)
+
+        logits = ndl.relu(curr_X @ W1) @ W2
+        loss = softmax_loss(logits, curr_y)
+        loss.backward()
+
+        updated_W1 = W1.numpy() - lr * W1.grad.numpy()
+        W1 = ndl.Tensor(updated_W1, device = W1.device, requires_grad = True)
+        updated_W2 = W2.numpy() - lr * W2.grad.numpy()
+        W2 = ndl.Tensor(updated_W2, device = W1.device, requires_grad = True)
+
+    return (W1, W2)
+    # raise NotImplementedError()
     ### END YOUR SOLUTION
 
 ### CIFAR-10 training ###

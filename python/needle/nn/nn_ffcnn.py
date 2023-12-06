@@ -88,8 +88,8 @@ class Fin_FFC(Module):
         
         return x
 
-Ffc_layer = Fin_FFC()
-arr1 = Tensor(np.random.rand(16,1,32,32))
-out = Ffc_layer(arr1)
+# Ffc_layer = Fin_FFC()
+# arr1 = Tensor(np.random.rand(16,1,32,32))
+# out = Ffc_layer(arr1)
 
 

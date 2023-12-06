@@ -1,6 +1,7 @@
 import sys
+sys.path.append('/Users/rushikeshzawar/Downloads/Personal/CMU_COURSES/dlsys/project/repo/DL_sys/python')
 
-sys.path.append("../python")
+#sys.path.append("../python")
 import needle as ndl
 import needle.nn as nn
 import numpy as np
@@ -102,7 +103,7 @@ def train_mnist(
     mnist_test_dataset = ndl.data.MNISTDataset(test_imgs_path, test_labels_path)
     test_loader = ndl.data.DataLoader(dataset = mnist_test_dataset, batch_size = batch_size, shuffle = False)
 
-    model = MLPResNet(784, hidden_dim = hidden_dim)
+    model = nn.Fin_FFC() #MLPResNet(784, hidden_dim = hidden_dim)
     opt = optimizer(model.parameters(), lr = lr, weight_decay = weight_decay)
 
     train_err, train_loss = 0.0, 0.0

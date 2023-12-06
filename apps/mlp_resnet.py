@@ -7,6 +7,7 @@ import needle.nn as nn
 import numpy as np
 import time
 import os
+import pdb
 
 np.random.seed(0)
 # MY_DEVICE = ndl.backend_selection.cuda()
@@ -58,6 +59,7 @@ def epoch(dataloader, model, opt=None):
     avg_loss = 0.0
 
     for i, batch in enumerate(dataloader):
+        print("batch", i)
         batch_x, batch_y = batch[0], batch[1]
         
         # batch_x.device = model.device
@@ -67,6 +69,8 @@ def epoch(dataloader, model, opt=None):
             opt.reset_grad()
 
         logits = model(nn.Flatten()(batch_x))
+        
+        #pdb.set_trace()
         loss = loss_fn(logits, batch_y)
 
         if opt is not None:
@@ -89,7 +93,7 @@ def train_mnist(
     lr=0.001,
     weight_decay=0.001,
     hidden_dim=100,
-    data_dir="data",
+    data_dir="/Users/rushikeshzawar/Downloads/Personal/CMU_COURSES/dlsys/project/repo/DL_sys/python/needle/data",
 ):
     np.random.seed(4)
     ### BEGIN YOUR SOLUTION
@@ -108,6 +112,7 @@ def train_mnist(
 
     train_err, train_loss = 0.0, 0.0
     for curr_epoch in range(epochs):
+        print(curr_epoch)
         train_err, train_loss = epoch(train_loader, model, opt)
 
     test_err, test_loss = epoch(test_loader, model)
@@ -118,4 +123,4 @@ def train_mnist(
 
 
 if __name__ == "__main__":
-    train_mnist(data_dir="../data")
+    train_mnist() #data_dir="../data")

@@ -75,6 +75,10 @@ class Adam(Optimizer):
         self.t += 1
 
         for ix, param in enumerate(self.params):
+            if param.grad.data is None:
+                pdb.set_trace()
+
+
             gt_1 = param.grad.data + self.weight_decay * param.data
 
             mt = ndl.init.zeros(*gt_1.shape, device = gt_1.device, dtype = gt_1.dtype)

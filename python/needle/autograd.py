@@ -385,11 +385,16 @@ def compute_gradient_of_variables(output_tensor, out_grad):
     ### BEGIN YOUR SOLUTION
     for node in reverse_topo_order:
         adj = sum_node_list(node_to_output_grads_list[node])
+        # print(adj)
+        if adj is None:
+            pdb.set_trace()
         node.grad = adj
 
         if node.op is not None:
+            # print(node.op, type(adj), type(node))
             partial_adjs = node.op.gradient_as_tuple(adj, node)
-            
+            # print(type(partial_adjs))
+
             for ix in range(len(node.inputs)):
                 inp_node = node.inputs[ix]
 

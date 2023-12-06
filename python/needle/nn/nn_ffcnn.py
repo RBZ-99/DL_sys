@@ -34,13 +34,13 @@ class Fin_FFC(Module):
 #         r = 16
 
         # self.avgpool = nn.AdaptiveAvgPool2d((2, 2))
-        self.conv1 = Conv(1, 16, kernel_size=3,stride=1) #,padding=0)
+        self.conv1 = Conv(1, 16, kernel_size=5,stride=1,padding=4)
         self.relu = ReLU()
-        self.conv2 = Conv(32,64, kernel_size=3,stride=1) #,padding=0)
-        self.conv3 = Conv(64,96,kernel_size=3,stride=1)#,padding=0)
-        self.conv4 = Conv(96,128,kernel_size=3,stride=1)#,padding=0)
-        self.conv5 = Conv(128,256,kernel_size=3,stride=1)#,padding=0)
-        self.linear = Linear(786432,10) #check the size to initialize this layer
+        self.conv2 = Conv(32,64, kernel_size=3,stride=1)#,padding=2)
+        self.conv3 = Conv(64,96,kernel_size=3,stride=1)#,padding=2)
+        #self.conv4 = Conv(96,128,kernel_size=3,stride=1)#,padding=2)
+        #self.conv5 = Conv(128,256,kernel_size=3,stride=1)#,padding=2)
+        self.linear = Linear(49152,10) #check the size to initialize this layer
 #         self.conv_a2l = None if in_cl == 0 else nn.Conv2d(channels // r, in_cl, kernel_size=1, bias=True)
 #         self.conv_a2g = None if in_cg == 0 else nn.Conv2d(channels // r, in_cg, kernel_size=1, bias=True)
         #self.sigmoid = Sigmoid()
@@ -49,7 +49,9 @@ class Fin_FFC(Module):
 #         batch, c, h , w = x.shape
 #         channels_local = int(self.ratio_g * c)
 #         channels_global = c - channels_local
-        pdb.set_trace()
+        #pdb.set_trace()
+        batch_size,b = x.shape
+        x = ops.reshape(x,(batch_size,1,28,28))
         
         x = self.conv1(x)
         x = self.relu(x)
@@ -76,13 +78,19 @@ class Fin_FFC(Module):
         x = ops.reshape(x,(int(b_fl*c_fl/2),h_fl,w_fl,2))
         
         x = ops.ifft2d(x,only_real=True) #torch.fft.ifft2(x) #assuming it takes (b*c/2,h,w,2)
+        a1,b1,c1,d1 = x.shape
 
-        new_shape = x.shape[0]*x.shape[1]*x.shape[2] #*x.shape[3]
+        x = ops.reshape(x,(batch_size,int(c_fl/2),b1,c1))
+
+
+
+        new_shape = int((c_fl/2)*c1*b1) #x.shape[0]*x.shape[1]*x.shape[2] #*x.shape[3]
+
 
         
-        x = ops.reshape(x,(new_shape,1)) #.flatten(x)
+        x = ops.reshape(x,(batch_size,new_shape)) #.flatten(x)
 
-        x = self.linear(ops.transpose(x))
+        x = self.linear(x)
 #         x = self.linear2(x)
         
         

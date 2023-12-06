@@ -6,6 +6,7 @@ from . import ndarray_backend_numpy
 from . import ndarray_backend_cpu
 
 PI = 3.142
+import pdb
 
 
 # math.prod not in Python 3.7
@@ -627,6 +628,7 @@ class NDArray:
     def fft2d(self, conjugate = False):
         batch_size, M, N = self.shape[:3]
         arr = self
+        
 
         if self.ndim == 3:
             arr = full((batch_size, M, N, 2), 0, self.dtype, self.device)
@@ -678,11 +680,19 @@ class NDArray:
         batch_size, M, N = self.shape[:3]
         arr = self
 
-        if self.ndim == 3:
+        if self.ndim == 3 or self.shape[3] == 1:
             arr = full((batch_size, M, N, 2), 0, self.dtype, self.device)
-            arr[:, :, :, 0] = self[:, :, :]
+            if self.ndim == 3: 
+                arr[:, :, :, 0] = self[:, :, :]
+            else:
+                arr[:, :, :, 0] = self[:, :, :, 0]
+        #pdb.set_trace()
 
-        arr = arr.reshape((batch_size * M, N, 2))
+        try:
+            # print("hi", arr.shape)
+            arr = arr.reshape((batch_size * M, N, 2))
+        except:
+            pdb.set_trace()
         res = arr.ifft1d(conjugate)
         res = res.reshape((batch_size, M, N, 2))
         res = res.permute((0, 2, 1, 3)).compact()

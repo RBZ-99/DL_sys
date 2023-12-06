@@ -83,6 +83,7 @@ class FFT1D(TensorOp):
 
     def gradient(self, out_grad, node):
         grad = out_grad.realize_cached_data().fft1d(conjugate = True)[:, :, 0]
+        grad = Tensor(grad, device = out_grad.device, dtype = out_grad.dtype)
 
         return (grad,)
 
@@ -103,6 +104,7 @@ class IFFT1D(TensorOp):
 
     def gradient(self, out_grad, node):
         grad = out_grad.realize_cached_data().ifft1d(conjugate = True)[:, :, 0]
+        grad = Tensor(grad, device = out_grad.device, dtype = out_grad.dtype)
 
         return (grad,)
 
@@ -117,6 +119,7 @@ class FFT2D(TensorOp):
 
     def gradient(self, out_grad, node):
         grad = out_grad.realize_cached_data().fft2d(conjugate = True)[:, :, :, 0]
+        grad = Tensor(grad, device = out_grad.device, dtype = out_grad.dtype)
 
         return (grad,)
 
@@ -136,7 +139,9 @@ class IFFT2D(TensorOp):
       return a.ifft2d()
 
     def gradient(self, out_grad, node):
-        grad = out_grad.realize_cached_data().ifft2d(conjugate = True)[:, :, :, 0]
+        grad = out_grad.realize_cached_data().ifft2d(conjugate = True)
+        # [:, :, :, 0]
+        grad = Tensor(grad, device = out_grad.device, dtype = out_grad.dtype)
 
         return (grad,)
 

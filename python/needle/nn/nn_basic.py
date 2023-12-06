@@ -5,7 +5,7 @@ from needle.autograd import Tensor
 from needle import ops
 import needle.init as init
 import numpy as np
-
+import pdb
 
 class Parameter(Tensor):
     """A special kind of tensor that represents parameters."""
@@ -145,6 +145,7 @@ class Sequential(Module):
 class SoftmaxLoss(Module):
     def forward(self, logits: Tensor, y: Tensor):
         ### BEGIN YOUR SOLUTION
+        #pdb.set_trace()
         zy = ops.summation(logits * init.one_hot(logits.shape[1], y, device = logits.device), axes = (1,))
         losses = ops.logsumexp(logits, axes = (1,)) - zy
         mean_loss = ops.summation(losses) / logits.shape[0]

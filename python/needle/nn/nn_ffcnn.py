@@ -1,53 +1,95 @@
-"""The module.
-"""
-from typing import List, Callable, Any
+import sys
+sys.path.append('/Users/rushikeshzawar/Downloads/Personal/CMU_COURSES/dlsys/project/repo/DL_sys/python')
 from needle.autograd import Tensor
+import needle.backend_ndarray.ndarray as ndarray
 from needle import ops
 import needle.init as init
 import numpy as np
-from .nn_basic import Parameter, Module
+import pdb
+
+#from fft import *
+import needle as ndl
+from needle.nn.nn_basic import (
+    Parameter, 
+    Module, 
+    ReLU,
+    Dropout,
+    LayerNorm1d,
+    Linear,
+    Sequential,
+    Residual,
+    BatchNorm2d
+)
+from needle.nn.nn_conv import Conv
 
 
-class FFConv(Module):
-    """
+class Fin_FFC(Module):
+
+    def __init__(self):
+        super(Fin_FFC, self).__init__()
+#         self.ratio = ratio
+        
+#         in_cg = int(in_channels * ratio)
+#         in_cl = channels - in_cg
+#         r = 16
+
+        # self.avgpool = nn.AdaptiveAvgPool2d((2, 2))
+        self.conv1 = Conv(1, 16, kernel_size=3,stride=1) #,padding=0)
+        self.relu = ReLU()
+        self.conv2 = Conv(32,64, kernel_size=3,stride=1) #,padding=0)
+        self.conv3 = Conv(64,96,kernel_size=3,stride=1)#,padding=0)
+        self.conv4 = Conv(96,128,kernel_size=3,stride=1)#,padding=0)
+        self.conv5 = Conv(128,256,kernel_size=3,stride=1)#,padding=0)
+        self.linear = Linear(786432,10) #check the size to initialize this layer
+#         self.conv_a2l = None if in_cl == 0 else nn.Conv2d(channels // r, in_cl, kernel_size=1, bias=True)
+#         self.conv_a2g = None if in_cg == 0 else nn.Conv2d(channels // r, in_cg, kernel_size=1, bias=True)
+        #self.sigmoid = Sigmoid()
+
+    def forward(self, x):
+#         batch, c, h , w = x.shape
+#         channels_local = int(self.ratio_g * c)
+#         channels_global = c - channels_local
+        pdb.set_trace()
+        
+        x = self.conv1(x)
+        x = self.relu(x)
+        a,b,c,d = x.shape
+        x = ops.reshape(x,(x.shape[0]*x.shape[1],x.shape[2],x.shape[3]))
+        
+        x = ops.fft2d(x) #torch.fft.rfft2(x) #assuming it returns two separate channels
+        
+        
+        b_f,h_f,w_f,c_f = x.shape #256, 32, 32, 2
+        #x = 
+
+        #x = ops.reshape(x,(x.shape[0]*x.shape[1],x.shape[2],x.shape[3]))
+        x = ops.reshape(x,(a,b*2,h_f,w_f))
+        
+        x = self.conv2(x)
+        x = self.relu(x)
+        x = self.conv3(x)
+        x = self.relu(x)
+        #x = self.avgpool(x)
     
-    """
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, bias=True, device=None, dtype="float32"):
-        super().__init__()
-        if isinstance(kernel_size, tuple):
-            kernel_size = kernel_size[0]
-        if isinstance(stride, tuple):
-            stride = stride[0]
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.kernel_size = kernel_size
-        self.stride = stride
-
-        ### BEGIN YOUR SOLUTION
-        fan_in = kernel_size * kernel_size * in_channels
-        self.weight = Parameter(init.kaiming_uniform(fan_in, None, (kernel_size, kernel_size, in_channels, out_channels)), 
-        device = device, dtype = dtype, requires_grad = True)
         
-        self.bias = None
-        if bias:
-            bound = 1 / (in_channels * kernel_size ** 2) ** 0.5
-            self.bias = Parameter(init.rand(out_channels, low = -bound, high = bound, 
-            device = device, dtype = dtype, requires_grad = True)) 
-
-        self.padding = (kernel_size - 1) // 2
-        # raise NotImplementedError()
-        ### END YOUR SOLUTION
-
-    def forward(self, x: Tensor) -> Tensor:
-        ### BEGIN YOUR SOLUTION
-        input = ops.transpose(ops.transpose(x, (1, 2)), (2, 3))
+        b_fl, c_fl, h_fl, w_fl = x.shape
+        x = ops.reshape(x,(int(b_fl*c_fl/2),h_fl,w_fl,2))
         
-        output = ops.conv(input, self.weight, self.stride, self.padding)
-        if self.bias is not None:
-            output = output + ops.broadcast_to(ops.reshape(self.bias, (1, 1, 1, self.out_channels)), output.shape)
-        
-        output = ops.transpose(ops.transpose(output, (2, 3)), (1, 2))
+        x = ops.ifft2d(x,only_real=True) #torch.fft.ifft2(x) #assuming it takes (b*c/2,h,w,2)
 
-        return output
-        # raise NotImplementedError()
-        ### END YOUR SOLUTION
+        new_shape = x.shape[0]*x.shape[1]*x.shape[2] #*x.shape[3]
+
+        
+        x = ops.reshape(x,(new_shape,1)) #.flatten(x)
+
+        x = self.linear(ops.transpose(x))
+#         x = self.linear2(x)
+        
+        
+        return x
+
+Ffc_layer = Fin_FFC()
+arr1 = Tensor(np.random.rand(16,1,32,32))
+out = Ffc_layer(arr1)
+
+

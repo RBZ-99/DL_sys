@@ -6,7 +6,6 @@ from . import ndarray_backend_numpy
 from . import ndarray_backend_cpu
 
 PI = 3.142
-import pdb
 
 
 # math.prod not in Python 3.7
@@ -261,7 +260,6 @@ class NDArray:
           new_prod *= dim
 
         if not self.is_compact() or orig_prod != new_prod:
-          # print(self.is_compact(), orig_prod, new_prod, self.shape, new_shape)
           raise ValueError
 
         return self.make(new_shape, self.compact_strides(new_shape), self._device, self._handle, self._offset)
@@ -596,7 +594,64 @@ class NDArray:
 
         return out
 
+    @staticmethod
+    def bitReverse(x, log2n):
+        n = 0
+        for i in range(log2n):
+            n <<= 1
+            n |= (x & 1)
+            x >>= 1
+        return n
+
     def fft1d(self, conjugate = False):
+        # batch_size, N = self.shape[:2]
+        # arr = self
+        # out = full((batch_size, N, 2), 0, self.dtype, self.device)
+
+        # if self.ndim == 2:
+        #     arr = full((batch_size, N, 2), 0, self.dtype, self.device)
+        #     arr[:, :, 0] = self[:, :]
+
+        # iters = int(np.log(N) / np.log(2))
+        # for k in range(0, N):
+        #     form = '{:0' + str(iters) + 'b}'
+        #     rev_k = int(form.format(k)[::-1], 2)
+        #     out[:, k, :] = arr[:, rev_k, :]
+
+        # for s in range(1, iters + 1):
+        #     m = np.power(2, s)
+        #     omm = full((batch_size, 1, 2), 0, self.dtype, self.device)
+        #     omm[:, :, 1] = full((batch_size, 1, 1), 1, self.dtype, self.device)
+        #     omm = PI * omm / (m // 2)
+        #     omm = omm.complex_exp()
+
+        #     if conjugate:
+        #         omm[:, :, 1] *= -1
+
+        #     om = full((batch_size, 1, 2), 0, self.dtype, self.device)
+        #     om[:, :, 0] = full((batch_size, 1, 1), 1, self.dtype, self.device)
+
+        #     for j in range(0, m // 2):
+        #         for k in range(j, N, m):
+        #             t = full((batch_size, 1, 2), 0, self.dtype, self.device)
+        #             t[:, :, :] = om.complex_mul(out[:, k + m // 2, :])
+
+        #             u = full((batch_size, 1, 2), 0, self.dtype, self.device)
+        #             u[:, :, :] = out[:, k, :]
+
+        #             out[:, k, :] = u + t
+        #             out[:, k + m // 2, :] = u - t
+
+        #         om = om.complex_mul(omm)
+
+        # final = full((batch_size, N, 2), 0, self.dtype, self.device)
+        # final[:, 0, :] = out[:, 0, :]
+        # for i in range(1, N):
+        #     final[:, i, :] = out[:, N - i, :]
+
+        # return final
+
+
         batch_size, N = self.shape[:2]
         arr = self
 
@@ -646,9 +701,6 @@ class NDArray:
         return out
 
     def ifft1d(self, conjugate = False):
-        import pdb
-        print("count me")
-        #pdb.set_trace()
         batch_size, N = self.shape[:2]
         arr = self
 
@@ -662,8 +714,6 @@ class NDArray:
         else:
             even = arr[:, ::2, :].ifft1d(conjugate)
             odd = arr[:, 1::2, :].ifft1d(conjugate)
-            import pdb
-            #pdb.set_trace()
             
             factor = full((batch_size, N // 2, 2), 0, self.dtype, self.device)
             factor_init = NDArray(range(N // 2), device = self.device)
@@ -675,15 +725,12 @@ class NDArray:
             if conjugate:
                 factor[:, :, 1] *= -1
 
-            out, _ = concat((even + odd.complex_mul(factor[:, :N // 2, :]), even + odd.complex_mul(factor[:, N // 2:, :])), 1) #concat((even + odd.complex_mul(factor), even - odd.complex_mul(factor)), 1)
+            out, _ = concat((even + odd.complex_mul(factor), even - odd.complex_mul(factor)), 1)
             out /= 2
 
             return out
 
-   
-
     def ifft2d(self, conjugate = False):
-        #pdb.set_trace()
         batch_size, M, N = self.shape[:3]
         arr = self
 
@@ -693,14 +740,8 @@ class NDArray:
                 arr[:, :, :, 0] = self[:, :, :]
             else:
                 arr[:, :, :, 0] = self[:, :, :, 0]
-        #pdb.set_trace()
 
-        try:
-            # print("hi", arr.shape)
-            arr = arr.reshape((batch_size * M, N, 2))
-        except:
-            pdb.set_trace()
-        pdb.set_trace()
+        arr = arr.reshape((batch_size * M, N, 2))
         res = arr.ifft1d(conjugate)
         res = res.reshape((batch_size, M, N, 2))
         res = res.permute((0, 2, 1, 3)).compact()

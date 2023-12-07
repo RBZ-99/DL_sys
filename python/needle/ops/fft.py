@@ -13,8 +13,8 @@ from ..backend_selection import array_api, BACKEND
 from .ops_tuple import *
 
 import numpy as np
-import pdb
 from ..init import *
+
 PI = 3.142
 
 
@@ -102,7 +102,8 @@ class IFFT1D(TensorOp):
         return a.ifft1d()
 
     def gradient(self, out_grad, node):
-        grad = out_grad.realize_cached_data().ifft1d(conjugate = True)[:, :, 0]
+        grad = out_grad.realize_cached_data().ifft1d(conjugate = True)
+        # [:, :, 0]
         grad = Tensor(grad, device = out_grad.device, dtype = out_grad.dtype)
 
         return (grad,)
@@ -114,11 +115,9 @@ def ifft1d(a, only_real = False):
 
 class FFT2D(TensorOp):
     def compute(self, a):
-        #pdb.set_trace()
         return a.fft2d()
 
     def gradient(self, out_grad, node):
-        #pdb.set_trace()
         grad = out_grad.realize_cached_data().fft2d(conjugate = True)[:, :, :, 0]
         grad = Tensor(grad, device = out_grad.device, dtype = out_grad.dtype)
 
@@ -134,14 +133,12 @@ class IFFT2D(TensorOp):
         self.only_real = only_real
 
     def compute(self, a):
-        #pdb.set_trace()
         if self.only_real:
             return a.ifft2d()[:, :, :, 0]
 
         return a.ifft2d()
 
     def gradient(self, out_grad, node):
-        #pdb.set_trace()
         grad = out_grad.realize_cached_data().ifft2d(conjugate = True)
         # [:, :, :, 0]
         grad = Tensor(grad, device = out_grad.device, dtype = out_grad.dtype)

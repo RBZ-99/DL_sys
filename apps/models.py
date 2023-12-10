@@ -4,7 +4,11 @@ import needle as ndl
 import needle.nn as nn
 import math
 import numpy as np
+from needle import ops
 np.random.seed(0)
+
+
+
 
 class ConvBN(ndl.nn.Module):
     def __init__(self, in_c, out_c, k_size, stride, bias=True, device=None, dtype="float32"):
@@ -18,6 +22,62 @@ class ConvBN(ndl.nn.Module):
 
     def forward(self, x):
         return self.model(x)
+
+
+
+
+class CustomResnet_FFT(ndl.nn.Module):
+    def __init__(self, device=None, dtype="float32"):
+        super().__init__()
+        ### BEGIN YOUR SOLUTION ###
+        self.model1 = nn.Sequential(
+          ConvBN(3, 16, 7, 4, True, device, dtype),
+          )
+        
+        self.model2 = nn.Sequential(ConvBN(32, 64, 3, 2, True, device, dtype),
+        ConvBN(64, 128, 3, 2, True, device, dtype)
+        )
+        self.model3 = nn.Sequential( nn.Flatten(),
+          nn.Linear(128, 128, True, device, dtype), 
+          nn.ReLU(),
+          nn.Linear(128, 10, True, device, dtype))
+        # raise NotImplementedError() ###
+        ### END YOUR SOLUTION
+
+    def forward(self, x):
+        ### BEGIN YOUR SOLUTION
+        import pdb
+        pdb.set_trace()
+        b0,d0 = x.shape
+        x = ops.reshape(x,(b0,1,28,28))
+
+        x = self.model1(x)
+        b1,c1,h1,w1 = x.shape
+
+        x = ops.reshape(x,(b1*c1,h1,w1))
+
+        x = ops.fft2d(x)
+
+        x = ops.reshape(x,(b1,c1*2,h1,w1))
+
+        x = self.model2(x)
+
+        b2,c2,h2,w2 = x.shape
+
+        x = ops.reshape(x,(b1*c2/2,h2,w2,2))
+
+        x = ops.ifft2d(x)
+
+        x = ops.reshape(x,(b1,c2/2,h2,w2))
+        
+        x = self.model3(x)
+
+        return x
+
+
+        # raise NotImplementedError()
+        ### END YOUR SOLUTION
+
 
 class ResNet9(ndl.nn.Module):
     def __init__(self, device=None, dtype="float32"):
@@ -54,6 +114,7 @@ class ResNet9(ndl.nn.Module):
 
     def forward(self, x):
         ### BEGIN YOUR SOLUTION
+
         return self.model(x)
         # raise NotImplementedError()
         ### END YOUR SOLUTION

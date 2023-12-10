@@ -1,0 +1,3 @@
+Using needle backend
+Epoch 0
+batch 0

@@ -647,7 +647,7 @@ class NDArray:
 
     def ifft1d(self, conjugate = False):
         import pdb
-        print("count me")
+        #print("count me")
         #pdb.set_trace()
         batch_size, N = self.shape[:2]
         arr = self
@@ -675,7 +675,7 @@ class NDArray:
             if conjugate:
                 factor[:, :, 1] *= -1
 
-            out, _ = concat((even + odd.complex_mul(factor[:, :N // 2, :]), even + odd.complex_mul(factor[:, N // 2:, :])), 1) #concat((even + odd.complex_mul(factor), even - odd.complex_mul(factor)), 1)
+            out, _ = concat((even + odd.complex_mul(factor), even - odd.complex_mul(factor)), 1)
             out /= 2
 
             return out
@@ -700,7 +700,7 @@ class NDArray:
             arr = arr.reshape((batch_size * M, N, 2))
         except:
             pdb.set_trace()
-        pdb.set_trace()
+        #pdb.set_trace()
         res = arr.ifft1d(conjugate)
         res = res.reshape((batch_size, M, N, 2))
         res = res.permute((0, 2, 1, 3)).compact()

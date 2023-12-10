@@ -8,6 +8,8 @@ import numpy as np
 import time
 import os
 import pdb
+from models import CustomResnet_FFT
+import matplotlib.pyplot as plt
 
 np.random.seed(0)
 # MY_DEVICE = ndl.backend_selection.cuda()
@@ -59,7 +61,7 @@ def epoch(dataloader, model, opt=None):
     avg_loss = 0.0
 
     for i, batch in enumerate(dataloader):
-        print("batch", i)
+        #print("batch", i)
         batch_x, batch_y = batch[0], batch[1]
         
         # batch_x.device = model.device
@@ -96,7 +98,7 @@ def train_mnist(
     batch_size=1000,
     epochs=10,
     optimizer=ndl.optim.Adam,
-    lr=0.001,
+    lr=0.01,
     weight_decay=0.001,
     hidden_dim=100,
     data_dir="/home/rushikesh/Projects/dlsys/DL_sys/python/needle/data",
@@ -113,7 +115,7 @@ def train_mnist(
     mnist_test_dataset = ndl.data.MNISTDataset(test_imgs_path, test_labels_path)
     test_loader = ndl.data.DataLoader(dataset = mnist_test_dataset, batch_size = batch_size, shuffle = False)
 
-    model = nn.Fin_FFC() #MLPResNet(784, hidden_dim = hidden_dim)
+    model = nn.Fin_FFC() #CustomResnet_FFT() #nn.Fin_FFC() #MLPResNet(784, hidden_dim = hidden_dim)
     opt = optimizer(model.parameters(), lr = lr, weight_decay = weight_decay)
 
     train_err, train_loss = 0.0, 0.0

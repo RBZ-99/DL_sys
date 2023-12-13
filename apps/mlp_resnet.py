@@ -77,7 +77,7 @@ def epoch(dataloader, model, opt=None):
 
         avg_err += len(np.where(np.argmax(logits.numpy(), (1)) != batch_y.numpy())[0])
         avg_loss += loss.numpy()*batch_y.shape[0]
-        loss.reset()
+        loss.reset() #optimizer's reset doesn't work -> so implemented custom function to reset grad
         num_batches += 1
     
     return avg_err / len(dataloader.dataset), avg_loss / len(dataloader.dataset)

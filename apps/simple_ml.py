@@ -131,7 +131,6 @@ def nn_epoch(X, y, W1, W2, lr=0.1, batch=100):
         W2 = ndl.Tensor(updated_W2, device = W1.device, requires_grad = True)
 
     return (W1, W2)
-    # raise NotImplementedError()
     ### END YOUR SOLUTION
 
 ### CIFAR-10 training ###
@@ -182,7 +181,6 @@ def epoch_general_cifar10(dataloader, model, loss_fn=nn.SoftmaxLoss(), opt=None)
         num_samples += batch_y.shape[0]
 
     return avg_acc / num_samples, avg_loss / num_samples
-    # raise NotImplementedError()
     ### END YOUR SOLUTION
 
 
@@ -323,7 +321,6 @@ def train_ptb(model, data, seq_len=40, n_epochs=1, optimizer=ndl.optim.SGD,
         loss_fn, opt, clip, device, dtype)
 
     return (train_acc, train_loss)
-    # raise NotImplementedError()
     ### END YOUR SOLUTION
 
 def evaluate_ptb(model, data, seq_len=40, loss_fn=nn.SoftmaxLoss(),
@@ -345,7 +342,6 @@ def evaluate_ptb(model, data, seq_len=40, loss_fn=nn.SoftmaxLoss(),
     ### BEGIN YOUR SOLUTION
     return epoch_general_ptb(data, model, seq_len, 
     loss_fn, device = device, dtype = dtype)
-    # raise NotImplementedError()
     ### END YOUR SOLUTION
 
 ### CODE BELOW IS FOR ILLUSTRATION, YOU DO NOT NEED TO EDIT

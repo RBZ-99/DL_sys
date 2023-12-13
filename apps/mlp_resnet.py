@@ -8,7 +8,6 @@ import numpy as np
 import time
 import os
 import pdb
-from models import CustomResnet_FFT
 import matplotlib.pyplot as plt
 
 np.random.seed(0)

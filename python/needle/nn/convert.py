@@ -11,6 +11,10 @@ import cv2
 import needle as ndl
 import matplotlib.pyplot as plt
 
+
+'''
+A test code to find the FFT of an image and also find its inverse FFT.
+'''
 img = cv2.imread("./sample_image_mnist.webp")
 img = cv2.resize(img, (2048, 2048), interpolation = cv2.INTER_LINEAR)
 
@@ -23,7 +27,6 @@ fft_op = np.log(abs(fft_op))
 color = np.stack((fft_op,) * 3, axis = -1)
 
 
-# import pdb; pdb.set_trace()
 cv2.imwrite("fft.png", color)
 
 inp2 = Tensor(op)
@@ -31,7 +34,6 @@ op2 = ndl.ifft2d(inp2)
 fft_op = op2.realize_cached_data()[0, :, :, 0].numpy().reshape((2048, 2048))
 color = np.stack((fft_op,) * 3, axis = -1)
 
-# recon = op2.realize_cached_data()[0, :, :, 0]
 
 cv2.imwrite("ifft.png", color)
 

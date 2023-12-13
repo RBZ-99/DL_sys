@@ -409,19 +409,15 @@ def compute_gradient_of_variables(output_tensor, out_grad):
 
     ### BEGIN YOUR SOLUTION
     import sys
-    #pdb.set_trace()
     for node in reverse_topo_order:
         adj = sum_node_list(node_to_output_grads_list[node])
         # print(adj)
         if adj is None:
             pdb.set_trace()
         node.grad = adj
-        #print(sys.getsizeof(node.grad.realize_cached_data()._handle))
 
         if node.op is not None:
-            # print(node.op, type(adj), type(node))
             partial_adjs = node.op.gradient_as_tuple(adj, node)
-            # print(type(partial_adjs))
 
             for ix in range(len(node.inputs)):
                 inp_node = node.inputs[ix]
@@ -430,9 +426,7 @@ def compute_gradient_of_variables(output_tensor, out_grad):
                     node_to_output_grads_list[inp_node] = []
 
                 node_to_output_grads_list[inp_node].append(partial_adjs[ix])
-    #pdb.set_trace()
-    # raise NotImplementedError()
-    ### END YOUR SOLUTION
+
 
 
 def find_topo_sort(node_list: List[Value]) -> List[Value]:
@@ -451,7 +445,6 @@ def find_topo_sort(node_list: List[Value]) -> List[Value]:
         topo_sort_dfs(node, visited, topo_order)
 
     return topo_order
-    # raise NotImplementedError()
     ### END YOUR SOLUTION
 
 

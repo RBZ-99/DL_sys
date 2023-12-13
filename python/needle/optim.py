@@ -12,10 +12,7 @@ class Optimizer:
 
     def reset_grad(self):
         for p in self.params:
-            if hasattr(p,"grad"):
-                #pdb.set_trace()
-                del p.grad
-            #p.grad = None
+            p.grad = None
 
 
 class SGD(Optimizer):
@@ -40,7 +37,6 @@ class SGD(Optimizer):
             param.data = param.data - self.lr * ut_1
 
             self.u[ix] = ut_1
-        # raise NotImplementedError()
         ### END YOUR SOLUTION
 
     def clip_grad_norm(self, max_norm=0.25):

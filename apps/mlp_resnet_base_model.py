@@ -41,7 +41,6 @@ def MLPResNet(
     layers.append(nn.Linear(hidden_dim, num_classes))
 
     return nn.Sequential(*layers)
-    # raise NotImplementedError()
     ### END YOUR SOLUTION
 
 
@@ -61,9 +60,7 @@ def epoch(dataloader, model, opt=None):
     avg_loss = 0.0
 
     for i, batch in enumerate(dataloader):
-        #print("batch", i)
         batch_x, batch_y = batch[0], batch[1]
-        
         # batch_x.device = model.device
         # batch_y.device = model.device
 
@@ -72,25 +69,18 @@ def epoch(dataloader, model, opt=None):
 
         logits = model(nn.Flatten()(batch_x))
         
-        #pdb.set_trace()
         loss = loss_fn(logits, batch_y)
 
         if opt is not None:
             loss.backward()
             opt.step()
-            
-            #print(" resetting grad")
-            #opt.reset_grad()
 
         avg_err += len(np.where(np.argmax(logits.numpy(), (1)) != batch_y.numpy())[0])
         avg_loss += loss.numpy()*batch_y.shape[0]
         loss.reset()
         num_batches += 1
         
-
-
     return avg_err / len(dataloader.dataset), avg_loss / len(dataloader.dataset)
-    # raise NotImplementedError()
     ### END YOUR SOLUTION
 
 
@@ -142,11 +132,7 @@ def train_mnist(
     plt.show()
 
     return (train_err, train_loss, test_err, test_loss)
-    # raise NotImplementedError()
     ### END YOUR SOLUTION
-
-
-
 
 
     train_imgs_path = os.path.join(data_dir, "train-images-idx3-ubyte.gz")
@@ -159,7 +145,7 @@ def train_mnist(
     mnist_test_dataset = ndl.data.MNISTDataset(test_imgs_path, test_labels_path)
     test_loader = ndl.data.DataLoader(dataset = mnist_test_dataset, batch_size = batch_size, shuffle = False)
 
-    model = nn.Fin_base() #MLPResNet(784, hidden_dim = hidden_dim)
+    model = nn.Fin_base() 
     opt = optimizer(model.parameters(), lr = lr, weight_decay = weight_decay)
 
     train_err, train_loss = 0.0, 0.0
@@ -170,7 +156,6 @@ def train_mnist(
     test_err, test_loss = epoch(test_loader, model)
 
     return (train_err, train_loss, test_err, test_loss)
-    # raise NotImplementedError()
     ### END YOUR SOLUTION
 
 
